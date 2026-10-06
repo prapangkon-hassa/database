@@ -44,6 +44,23 @@ type Store = {
 };
 const Context = createContext<Store | null>(null);
 const key = "ef-demo-v1";
+
+function readStoredData(raw: string | null): StoreData {
+  if (!raw) return initialData;
+  const candidate = JSON.parse(raw) as StoreData;
+  if (
+    !candidate ||
+    !["products", "variants", "orders", "reviews", "cart"].every((k) =>
+      Array.isArray(candidate[k as keyof StoreData]),
+    ) ||
+    !candidate.variants.every((v) =>
+      v && typeof v.variantId === "string" && typeof v.productId === "string" &&
+      Number.isInteger(v.stockQuantity) && v.stockQuantity >= 0,
+    )
+  ) throw new Error("Invalid saved inventory.");
+  return { ...candidate, cart: cartService.cleanCart(candidate) };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<StoreData>(initialData);
   const ref = useRef(data);
@@ -53,16 +70,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let loaded = initialData;
     try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const candidate = JSON.parse(raw) as StoreData;
-        if (
-          ["products", "variants", "orders", "reviews", "cart"].every((k) =>
-            Array.isArray(candidate[k as keyof StoreData]),
-          )
-        )
-          loaded = { ...candidate, cart: cartService.cleanCart(candidate) };
-      }
+      loaded = readStoredData(localStorage.getItem(key));
     } catch {
       setNotice(
         "Saved demo data could not be loaded. Starting with sample data.",
@@ -73,6 +81,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     setData(loaded);
     setReady(true);
+
+    // Other tabs have their own Context instance; accept persisted changes
+    // without writing them back (which would cause a storage event loop).
+    function syncStoredData(event: StorageEvent) {
+      if (event.storageArea !== localStorage || (event.key !== key && event.key !== null)) return;
+      try {
+        const next = readStoredData(event.newValue);
+        ref.current = next;
+        setData(next);
+      } catch {
+        setNotice("Saved inventory could not be synchronized. Keeping current data.");
+      }
+    }
+    window.addEventListener("storage", syncStoredData);
+    return () => window.removeEventListener("storage", syncStoredData);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 

@@ -1,28 +1,37 @@
 "use client";
 import { useStore } from "@/context/store-provider";
 import { Box, ChevronDown, Search, ShoppingBag, Store } from "lucide-react";
-import Link from "next/link";
+import { SiteLink as Link, SITE_NAVIGATION_EVENT } from "./site-link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function Navbar() {
   const { data } = useStore();
   const pathname = usePathname();
   const router = useRouter();
   const [homeSection, setHomeSection] = useState("home");
+  const menuRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     function syncSection() {
       setHomeSection(window.location.hash === "#catalog" ? "products" : "home");
+      if (menuRef.current) menuRef.current.open = false;
+    }
+    function onSiteNavigation(event: Event) {
+      const url = new URL((event as CustomEvent<string>).detail, window.location.href);
+      setHomeSection(url.hash === "#catalog" ? "products" : "home");
+      if (menuRef.current) menuRef.current.open = false;
     }
 
     // Home และ Products ใช้ pathname เดียวกัน จึงต้องอ่าน hash ด้วย
     syncSection();
     window.addEventListener("hashchange", syncSection);
     window.addEventListener("popstate", syncSection);
+    window.addEventListener(SITE_NAVIGATION_EVENT, onSiteNavigation);
     return () => {
       window.removeEventListener("hashchange", syncSection);
       window.removeEventListener("popstate", syncSection);
+      window.removeEventListener(SITE_NAVIGATION_EVENT, onSiteNavigation);
     };
   }, [pathname]);
 
@@ -52,7 +61,6 @@ export function Navbar() {
               className={homeActive ? "active" : ""}
               aria-current={homeActive ? "page" : undefined}
               href="/"
-              onNavigate={() => setHomeSection("home")}
             >
               Home
             </Link>
@@ -60,7 +68,6 @@ export function Navbar() {
               className={productsActive ? "active" : ""}
               aria-current={productsActive ? "page" : undefined}
               href="/#catalog"
-              onNavigate={() => setHomeSection("products")}
             >
               Products
             </Link>
@@ -95,7 +102,7 @@ export function Navbar() {
               <ShoppingBag size={20} />
               <span>{count}</span>
             </Link>
-            <details className="user-menu">
+            <details ref={menuRef} className="user-menu">
               <summary aria-label="Account menu">
                 <span className="avatar">AM</span>
                 <ChevronDown size={13} />

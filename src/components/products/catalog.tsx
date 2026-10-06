@@ -16,7 +16,7 @@ import {
   SlidersHorizontal,
   Truck,
 } from "lucide-react";
-import Link from "next/link";
+import { SiteLink as Link } from "@/components/layout/site-link";
 import { useState } from "react";
 import { ProductGrid } from "./product-grid";
 

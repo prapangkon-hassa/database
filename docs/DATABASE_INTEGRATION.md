@@ -16,6 +16,18 @@ SQL Server Express
 
 Next.js frontend ติดต่อ API และรับ JSON ส่วนการเปิด connection, SQL และ credentials ให้อยู่ในโปรเจกต์ ASP.NET Core
 
+## แหล่งข้อมูลสต็อกร่วมกัน
+
+- `StoreProvider` เก็บ `data.products` และ `data.variants` เป็น state กลางของทั้งเว็บ
+- `stockQuantity` อยู่ที่ variant เท่านั้น ไม่มีสต็อกสำเนาแยกในหน้าสินค้าหรือ card
+- `getProductInventory` ใน `src/services/products.service.ts` คำนวณสต็อกรวมและ `inStock` จาก state กลาง: มี variant ใดเหลือมากกว่า 0 = In Stock
+- หน้ารายละเอียดแยกสถานะของสินค้ารวมออกจากสถานะ variant ที่เลือก ดังนั้น variant ที่เลือกอาจหมด แต่ variant อื่นยังซื้อได้
+- checkout และการบันทึกสินค้าจาก merchant ใช้ `commit` ใน Context เพื่ออัปเดต state และ localStorage key `ef-demo-v1` พร้อมกัน
+- Context รับ `storage` event เพื่ออัปเดตแท็บอื่นที่เปิดอยู่ และโหลดสต็อกที่บันทึกก่อนแสดงรายการ
+- เมื่อเชื่อม ASP.NET Core ให้โหลดผล API เข้าสู่ state กลางนี้และใช้ผลที่ backend ยืนยันหลังแก้ไข/checkout ห้ามเพิ่ม state สต็อกแยกในแต่ละหน้า
+
+localStorage เป็นตัวเก็บข้อมูลของ frontend demo ใน browser เดียวกัน การป้องกันการซื้อพร้อมกันจากหลายผู้ใช้ต้องทำใน backend ด้วย transaction ภายหลัง
+
 ## เริ่มหมวดสินค้าก่อน
 
 1. อ่าน `types/product.ts` เพื่อรู้ฟิลด์ของ Product และ ProductVariant

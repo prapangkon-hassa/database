@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
+import { SiteLink as Link } from "./site-link";
 
 export function Footer() {
   return (

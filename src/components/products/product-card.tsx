@@ -4,20 +4,18 @@ import { useStore } from "@/context/store-provider";
 import { categories } from "@/data/mock-categories";
 import { merchants } from "@/data/mock-merchants";
 import { money } from "@/lib/utils";
+import { getProductInventory } from "@/services/products.service";
 import { Product } from "@/types";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export function ProductCard({ product }: { product: Product }) {
   const { data } = useStore();
-  const variants = data.variants.filter(
-    (v) => v.productId === product.productId,
-  );
+  const { variants, inStock } = getProductInventory(data, product.productId);
   const reviews = data.reviews.filter((r) => r.productId === product.productId);
   const rating = reviews.length
     ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
     : 0;
-  const stock = variants.reduce((n, v) => n + v.stockQuantity, 0);
   return (
     <article className="product-card">
       <Link className="product-image" href={"/products/" + product.productId}>
@@ -29,8 +27,8 @@ export function ProductCard({ product }: { product: Product }) {
             e.currentTarget.src = "/products/tote.svg";
           }}
         />
-        {stock === 0 ? (
-          <span className="image-label sold-out">Out of stock</span>
+        {!inStock ? (
+          <span className="image-label sold-out">Out of Stock</span>
         ) : product.productId === "p1" ? (
           <span className="image-label">Bestseller</span>
         ) : product.productId === "p3" ? (
@@ -60,9 +58,9 @@ export function ProductCard({ product }: { product: Product }) {
           }
         </p>
         <div className="row between product-price">
-          <b>{money(Math.min(...variants.map((v) => v.price)))}</b>
-          <span className={"stock " + (!stock ? "unavailable" : "")}>
-            {stock ? "In stock" : "Unavailable"}
+          <b>{variants.length ? money(Math.min(...variants.map((v) => v.price))) : "—"}</b>
+          <span className={"stock " + (!inStock ? "unavailable" : "")}>
+            {inStock ? "In Stock" : "Out of Stock"}
           </span>
         </div>
         <Link className="view-product" href={"/products/" + product.productId}>

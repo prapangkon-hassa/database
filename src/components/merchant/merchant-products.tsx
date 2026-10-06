@@ -7,6 +7,7 @@ import { useStore } from "@/context/store-provider";
 import { categories } from "@/data/mock-categories";
 import { merchants } from "@/data/mock-merchants";
 import { money } from "@/lib/utils";
+import { getProductInventory } from "@/services/products.service";
 import { Product } from "@/types";
 import {
   Archive,
@@ -64,7 +65,7 @@ export default function MerchantProducts() {
         />
         <MetricCard
           label="Units in stock"
-          value={String(variants.reduce((n, v) => n + v.stockQuantity, 0))}
+          value={ready ? String(variants.reduce((n, v) => n + v.stockQuantity, 0)) : "—"}
           detail="Across all product variants"
           icon={<Archive size={19} />}
         />
@@ -117,9 +118,7 @@ export default function MerchantProducts() {
             </thead>
             <tbody>
               {products.map((p) => {
-                const vs = data.variants.filter(
-                  (v) => v.productId === p.productId,
-                );
+                const { variants: vs, totalStock, inStock } = getProductInventory(data, p.productId);
                 return (
                   <tr key={p.productId}>
                     <td>
@@ -145,7 +144,12 @@ export default function MerchantProducts() {
                       {money(Math.min(...vs.map((v) => v.price)))} –{" "}
                       {money(Math.max(...vs.map((v) => v.price)))}
                     </td>
-                    <td>{vs.reduce((n, v) => n + v.stockQuantity, 0)}</td>
+                    <td>
+                      {totalStock}
+                      <small className={"stock block " + (!inStock ? "unavailable" : "")}>
+                        {inStock ? "In Stock" : "Out of Stock"}
+                      </small>
+                    </td>
                     <td>
                       <StatusBadge status={p.active ? "Active" : "Inactive"} />
                     </td>

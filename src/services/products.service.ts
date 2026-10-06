@@ -10,6 +10,17 @@ export const getProducts = (data: StoreData) => data.products;
 export const getProductById = (data: StoreData, id: string) =>
   data.products.find((p) => p.productId === id);
 
+// Derive availability only from the inventory held by StoreProvider.
+// API inventory can replace data.variants later without changing these rules.
+export function getProductInventory(data: StoreData, productId: string) {
+  const variants = data.variants.filter((v) => v.productId === productId);
+  return {
+    variants,
+    totalStock: variants.reduce((total, v) => total + v.stockQuantity, 0),
+    inStock: variants.some((v) => v.stockQuantity > 0),
+  };
+}
+
 export function saveProduct(
   data: StoreData,
   input: ProductInput,

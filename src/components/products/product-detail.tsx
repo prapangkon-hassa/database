@@ -7,6 +7,7 @@ import { categories } from "@/data/mock-categories";
 import { customers } from "@/data/mock-customers";
 import { merchants } from "@/data/mock-merchants";
 import { date, money } from "@/lib/utils";
+import { getProductInventory } from "@/services/products.service";
 import { ArrowLeft, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,8 +18,10 @@ export default function ProductDetail({ id }: { id: string }) {
   const [selected, setSelected] = useState("");
   const [quantity, setQuantity] = useState(1);
   const p = data.products.find((p) => p.productId === id && p.active);
-  const variants = data.variants.filter((v) => v.productId === id);
-  const v = variants.find((v) => v.variantId === selected) ?? variants[0];
+  const { variants, inStock } = getProductInventory(data, id);
+  const v = variants.find((v) => v.variantId === selected)
+    ?? variants.find((v) => v.stockQuantity > 0)
+    ?? variants[0];
   const reviews = data.reviews.filter((r) => r.productId === id);
   const rating = reviews.length
     ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
@@ -37,9 +40,10 @@ export default function ProductDetail({ id }: { id: string }) {
     );
   const inCart =
     data.cart.find((c) => c.variantId === v.variantId)?.quantity ?? 0;
-  const available = v.stockQuantity - inCart;
+  const available = Math.max(0, v.stockQuantity - inCart);
+  const purchaseQuantity = Math.min(quantity, Math.max(1, available));
   function add(buy = false) {
-    if (addToCart(v.variantId, quantity) && buy) router.push("/checkout");
+    if (addToCart(v.variantId, purchaseQuantity) && buy) router.push("/checkout");
   }
   return (
     <div className="container section">
@@ -74,6 +78,9 @@ export default function ProductDetail({ id }: { id: string }) {
           </div>
           <div className="detail-price">{money(v.price)}</div>
           <p className="description">{p.description}</p>
+          <p className={"stock my-4 " + (!inStock ? "unavailable" : "")} aria-label="Product availability">
+            {inStock ? "In Stock" : "Out of Stock"}
+          </p>
           <label className="field">
             Select a variant
             <select
@@ -85,7 +92,7 @@ export default function ProductDetail({ id }: { id: string }) {
             >
               {variants.map((v) => (
                 <option key={v.variantId} value={v.variantId}>
-                  {v.variantName}
+                  {v.variantName} — {v.stockQuantity > 0 ? `${v.stockQuantity} available` : "Out of Stock"}
                 </option>
               ))}
             </select>
@@ -96,15 +103,16 @@ export default function ProductDetail({ id }: { id: string }) {
             <span>SKU: {v.sku}</span>
           </div>
           <p
+            aria-label="Variant availability"
             className={"stock my-4 " + (!v.stockQuantity ? "unavailable" : "")}
           >
-            {v.stockQuantity ? v.stockQuantity + " available" : "Out of stock"}
+            {v.stockQuantity > 0 ? v.stockQuantity + " available" : "Out of Stock"}
             {inCart > 0 ? " · " + inCart + " in your cart" : ""}
           </p>
           <div className="row gap-4 mb-5">
             <span className="text-sm">Quantity</span>
             <QuantitySelector
-              value={quantity}
+              value={purchaseQuantity}
               max={available}
               onChange={setQuantity}
             />
@@ -112,14 +120,14 @@ export default function ProductDetail({ id }: { id: string }) {
           <div className="actions">
             <button
               className="button grow"
-              disabled={available < quantity}
+              disabled={available < purchaseQuantity}
               onClick={() => add()}
             >
               <ShoppingBag size={17} /> Add to cart
             </button>
             <button
               className="button secondary grow"
-              disabled={available < quantity}
+              disabled={available < purchaseQuantity}
               onClick={() => add(true)}
             >
               Buy now
