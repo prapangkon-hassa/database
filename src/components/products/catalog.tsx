@@ -54,11 +54,11 @@ export default function Catalog() {
     <div className="container">
       <section className="hero">
         <div className="hero-copy">
-          <span className="eyebrow">THE EVERYDAY COLLECTION</span>
+          <span className="eyebrow">YOUR EVERYDAY, UPGRADED</span>
           <h1>
-            Good things.
+            More to discover.
             <br />
-            <span>For your everyday.</span>
+            <span>More to love.</span>
           </h1>
           <p>
             Discover thoughtful essentials for the way you live,
@@ -69,22 +69,37 @@ export default function Catalog() {
           </Link>
           <span className="hero-note">Small details. A better everyday.</span>
         </div>
-        <div className="hero-art" aria-hidden="true">
-          <span className="hero-circle" />
-          <img
-            className="hero-headphones"
-            src="/products/hero-headphones.svg"
-            alt=""
-          />
-          <img className="hero-mug" src="/products/hero-mug.svg" alt="" />
-          <span className="hero-stamp">
-            Considered design.
-            <br />
-            Everyday value.
-          </span>
-          <span className="hero-product-tag">
-            Made for your daily rhythm <ArrowRight size={14} />
-          </span>
+        <div className="hero-art">
+          <div className="hero-market-card">
+            <span className="hero-shopping-icon">
+              <ShoppingBag size={32} aria-hidden="true" />
+            </span>
+            <div>
+              <span className="eyebrow">ONE PLACE. EVERYDAY FINDS.</span>
+              <h2>Meet your marketplace.</h2>
+            </div>
+            <div className="hero-market-stats">
+              <div>
+                <strong>{ready ? merchants.length : "—"}</strong>
+                <span>Merchants</span>
+              </div>
+              <div>
+                <strong>{ready ? categories.length : "—"}</strong>
+                <span>Categories</span>
+              </div>
+            </div>
+            <Link href="/orders" className="hero-tracking-link">
+              <PackageCheck size={21} /> Track your orders{" "}
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+          <div className="hero-delivery-card">
+            <Truck size={26} aria-hidden="true" />
+            <div>
+              <b>Free delivery</b>
+              <span>On orders ฿3,000+</span>
+            </div>
+          </div>
         </div>
       </section>
       <section className="benefits" aria-label="Shopping benefits">
@@ -130,6 +145,7 @@ export default function Catalog() {
               <button
                 key={c.categoryId}
                 className={category === c.categoryId ? "selected" : ""}
+                aria-pressed={category === c.categoryId}
                 onClick={() => setCategory(c.categoryId)}
               >
                 <Icon size={17} />
