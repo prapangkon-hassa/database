@@ -47,9 +47,6 @@ export function CartPage() {
           <div className="panel cart-list">
             {lines.map((line) => (
               <article key={line.variantId} className="cart-item">
-                <Link href={"/products/" + line.product.productId}>
-                  <img src={line.product.imageUrl} alt={line.product.name} />
-                </Link>
                 <div className="cart-info">
                   <Link href={"/products/" + line.product.productId}>
                     <h3>{line.product.name}</h3>

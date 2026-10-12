@@ -6,9 +6,8 @@ export const blankVariant = (): ProductVariant => ({
   variantId: "",
   productId: "",
   variantName: "",
-  color: "",
-  size: "",
   sku: "",
+  status: "active",
   price: 0,
   stockQuantity: 0,
 });
@@ -67,12 +66,20 @@ export function VariantEditor({
               <Trash2 size={15} />
             </button>
           </div>
+          <label className="field">
+            Status
+            <select
+              value={v.status}
+              onChange={(e) => update(index, "status", e.target.value)}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
           <div className="form-grid">
             {(
               [
                 { key: "variantName", label: "Variant name" },
-                { key: "color", label: "Color (optional)" },
-                { key: "size", label: "Size (optional)" },
                 { key: "sku", label: "SKU" },
                 { key: "price", label: "Price (THB)" },
                 { key: "stockQuantity", label: "Stock quantity" },

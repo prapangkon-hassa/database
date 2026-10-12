@@ -3,9 +3,6 @@ import { RatingStars } from "@/components/ui/display";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
 import { useStore } from "@/context/store-provider";
-import { categories } from "@/data/mock-categories";
-import { customers } from "@/data/mock-customers";
-import { merchants } from "@/data/mock-merchants";
 import { date, money } from "@/lib/utils";
 import { getProductInventory } from "@/services/products.service";
 import { ArrowLeft, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
@@ -14,14 +11,18 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 export default function ProductDetail({ id }: { id: string }) {
   const { data, ready, addToCart } = useStore();
+  const { categories, customers, merchants } = data;
   const router = useRouter();
   const [selected, setSelected] = useState("");
   const [quantity, setQuantity] = useState(1);
   const p = data.products.find((p) => p.productId === id && p.active);
-  const { variants, inStock } = getProductInventory(data, id);
-  const v = variants.find((v) => v.variantId === selected)
-    ?? variants.find((v) => v.stockQuantity > 0)
-    ?? variants[0];
+  const inventory = getProductInventory(data, id);
+  const variants = inventory.variants;
+  const inStock = inventory.inStock;
+  const v =
+    variants.find((v) => v.variantId === selected) ??
+    variants.find((v) => v.status === "active" && v.stockQuantity > 0) ??
+    variants[0];
   const reviews = data.reviews.filter((r) => r.productId === id);
   const rating = reviews.length
     ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
@@ -40,26 +41,21 @@ export default function ProductDetail({ id }: { id: string }) {
     );
   const inCart =
     data.cart.find((c) => c.variantId === v.variantId)?.quantity ?? 0;
-  const available = Math.max(0, v.stockQuantity - inCart);
+  const variantAvailable = v.status === "active" && v.stockQuantity > 0;
+  const available = variantAvailable
+    ? Math.max(0, v.stockQuantity - inCart)
+    : 0;
   const purchaseQuantity = Math.min(quantity, Math.max(1, available));
   function add(buy = false) {
-    if (addToCart(v.variantId, purchaseQuantity) && buy) router.push("/checkout");
+    if (addToCart(v.variantId, purchaseQuantity) && buy)
+      router.push("/checkout");
   }
   return (
     <div className="container section">
       <Link href="/#catalog" className="back-link">
         <ArrowLeft size={15} /> Back to products
       </Link>
-      <div className="detail-grid">
-        <div className="detail-image">
-          <img
-            src={p.imageUrl}
-            alt={p.name}
-            onError={(e) => {
-              e.currentTarget.src = "/products/tote.svg";
-            }}
-          />
-        </div>
+      <div className="panel form-section">
         <div className="detail-copy">
           <span className="eyebrow">
             {
@@ -78,7 +74,10 @@ export default function ProductDetail({ id }: { id: string }) {
           </div>
           <div className="detail-price">{money(v.price)}</div>
           <p className="description">{p.description}</p>
-          <p className={"stock my-4 " + (!inStock ? "unavailable" : "")} aria-label="Product availability">
+          <p
+            className={"stock my-4 " + (!inStock ? "unavailable" : "")}
+            aria-label="Product availability"
+          >
             {inStock ? "In Stock" : "Out of Stock"}
           </p>
           <label className="field">
@@ -92,21 +91,22 @@ export default function ProductDetail({ id }: { id: string }) {
             >
               {variants.map((v) => (
                 <option key={v.variantId} value={v.variantId}>
-                  {v.variantName} — {v.stockQuantity > 0 ? `${v.stockQuantity} available` : "Out of Stock"}
+                  {v.variantName} —{" "}
+                  {v.status === "active" && v.stockQuantity > 0
+                    ? `${v.stockQuantity} available`
+                    : "Out of Stock"}
                 </option>
               ))}
             </select>
           </label>
           <div className="variant-meta">
-            <span>Color: {v.color || "—"}</span>
-            <span>Size: {v.size || "—"}</span>
             <span>SKU: {v.sku}</span>
           </div>
           <p
             aria-label="Variant availability"
-            className={"stock my-4 " + (!v.stockQuantity ? "unavailable" : "")}
+            className={"stock my-4 " + (!variantAvailable ? "unavailable" : "")}
           >
-            {v.stockQuantity > 0 ? v.stockQuantity + " available" : "Out of Stock"}
+            {variantAvailable ? v.stockQuantity + " available" : "Out of Stock"}
             {inCart > 0 ? " · " + inCart + " in your cart" : ""}
           </p>
           <div className="row gap-4 mb-5">
@@ -157,7 +157,7 @@ export default function ProductDetail({ id }: { id: string }) {
               <div className="row between">
                 <b>
                   {customers.find((c) => c.customerId === r.customerId)
-                    ?.firstName ?? "Customer"}
+                    ?.fullName ?? "Customer"}
                 </b>
                 <span className="muted text-sm">{date(r.createdAt)}</span>
               </div>

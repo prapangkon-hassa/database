@@ -10,23 +10,14 @@ import Link from "next/link";
 import { useState } from "react";
 
 const fields: {
-  key: keyof Omit<CheckoutInput, "paymentMethod">;
+  key: keyof Omit<CheckoutInput, "paymentMethod" | "couponCode">;
   label: string;
   type?: string;
   autoComplete: string;
 }[] = [
   { key: "fullName", label: "Full name", autoComplete: "name" },
-  {
-    key: "email",
-    label: "Email address",
-    type: "email",
-    autoComplete: "email",
-  },
   { key: "phone", label: "Phone number", type: "tel", autoComplete: "tel" },
   { key: "addressLine", label: "Address line", autoComplete: "street-address" },
-  { key: "district", label: "District", autoComplete: "address-level2" },
-  { key: "province", label: "Province", autoComplete: "address-level1" },
-  { key: "postalCode", label: "Postal code", autoComplete: "postal-code" },
 ];
 
 export function CheckoutPage() {
@@ -34,12 +25,9 @@ export function CheckoutPage() {
   const lines = useCartLines();
   const [form, setForm] = useState<CheckoutInput>({
     fullName: "",
-    email: "",
     phone: "",
     addressLine: "",
-    district: "",
-    province: "",
-    postalCode: "",
+    couponCode: "",
     paymentMethod: "" as PaymentMethod,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,8 +41,6 @@ export function CheckoutPage() {
     fields.forEach((f) => {
       if (!form[f.key].trim()) next[f.key] = f.label + " is required.";
     });
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email))
-      next.email = "Enter a valid email address.";
     if (!form.paymentMethod) next.paymentMethod = "Choose a payment method.";
     setErrors(next);
     if (Object.keys(next).length) {
@@ -66,10 +52,8 @@ export function CheckoutPage() {
       return;
     }
     setBusy(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      // TODO POST /api/orders/checkout. Display the ASP.NET result/errors here.
-      setOrderId(checkout(form));
+      setOrderId(await checkout(form));
     } catch (error) {
       setErrors({
         submit:
@@ -98,7 +82,7 @@ export function CheckoutPage() {
             Your demo order <b>{orderId}</b> has been placed.
           </p>
           <p className="muted">
-            No real payment was taken. Payment is pending.
+            No real payment was taken. Payment status is recorded in your order.
           </p>
           <Link className="button" href={"/orders/" + orderId}>
             View your order <ArrowRight size={16} />
@@ -163,13 +147,13 @@ export function CheckoutPage() {
             <h2>
               <span className="step-number">1</span> Customer information
             </h2>
-            <div className="form-grid">{fields.slice(0, 3).map(field)}</div>
+            <div className="form-grid">{fields.slice(0, 2).map(field)}</div>
           </section>
           <section className="panel form-section">
             <h2>
               <span className="step-number">2</span> Shipping address
             </h2>
-            <div className="form-grid">{fields.slice(3).map(field)}</div>
+            <div className="form-grid">{fields.slice(2).map(field)}</div>
           </section>
           <section className="panel form-section">
             <h2>
@@ -208,7 +192,26 @@ export function CheckoutPage() {
             )}
           </section>
         </div>
-        <OrderSummary subtotal={subtotal}>
+        <OrderSummary
+          subtotal={subtotal}
+          discount={
+            form.couponCode.trim().toUpperCase() === "STUDENT10" &&
+            subtotal >= 500
+              ? Math.min(Math.round(subtotal * 10) / 100, 200)
+              : 0
+          }
+        >
+          <label className="field">
+            Coupon code
+            <input
+              aria-label="Coupon code"
+              value={form.couponCode}
+              onChange={(e) => setForm({ ...form, couponCode: e.target.value })}
+            />
+            <small>
+              STUDENT10: 10% off, maximum ฿200; minimum subtotal ฿500.
+            </small>
+          </label>
           <div className="checkout-items">
             {lines.map((i) => (
               <div key={i.variantId}>

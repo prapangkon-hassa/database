@@ -2,5 +2,7 @@
 export interface Merchant {
   merchantId: string;
   merchantName: string;
-  description: string;
+  email: string;
+  phone: string | null;
+  status: string;
 }

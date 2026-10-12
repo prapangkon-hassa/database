@@ -26,7 +26,9 @@ export function OrderCard({ order }: { order: OrderRecord }) {
       <div className="order-card-body">
         <div className="order-thumbnails">
           {order.items.map((i) => (
-            <img key={i.orderItemId} src={i.imageUrl} alt={i.productName} />
+            <span key={i.orderItemId}>
+              {i.productName} × {i.quantity}
+            </span>
           ))}
         </div>
         <div>

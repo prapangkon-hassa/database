@@ -4,8 +4,6 @@ import { ConfirmDialog, Modal } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/display";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
-import { categories } from "@/data/mock-categories";
-import { merchants } from "@/data/mock-merchants";
 import { money } from "@/lib/utils";
 import { getProductInventory } from "@/services/products.service";
 import { Product } from "@/types";
@@ -24,12 +22,13 @@ import { useState } from "react";
 import { ProductForm } from "./product-form";
 export default function MerchantProducts() {
   const { data, ready, deleteProduct } = useStore();
-  const [merchant, setMerchant] = useState("m1");
+  const { categories, merchants } = data;
+  const [merchant, setMerchant] = useState("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [deleting, setDeleting] = useState<Product | null>(null);
   const [view, setView] = useState<Product | null>(null);
-  const all = data.products.filter((p) => p.merchantId === merchant);
+  const all = data.products.filter((p) => merchant === "all" || p.merchantId === merchant);
   const products = all.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -65,7 +64,11 @@ export default function MerchantProducts() {
         />
         <MetricCard
           label="Units in stock"
-          value={ready ? String(variants.reduce((n, v) => n + v.stockQuantity, 0)) : "—"}
+          value={
+            ready
+              ? String(variants.reduce((n, v) => n + v.stockQuantity, 0))
+              : "—"
+          }
           detail="Across all product variants"
           icon={<Archive size={19} />}
         />
@@ -87,6 +90,7 @@ export default function MerchantProducts() {
             onChange={(e) => setMerchant(e.target.value)}
             aria-label="Select merchant"
           >
+            <option value="all">All merchants — ทุกร้าน</option>
             {merchants.map((m) => (
               <option key={m.merchantId} value={m.merchantId}>
                 {m.merchantName}
@@ -108,6 +112,7 @@ export default function MerchantProducts() {
             <thead>
               <tr>
                 <th>Product</th>
+                <th>Merchant</th>
                 <th>Category</th>
                 <th>Variants</th>
                 <th>Price range</th>
@@ -118,21 +123,19 @@ export default function MerchantProducts() {
             </thead>
             <tbody>
               {products.map((p) => {
-                const { variants: vs, totalStock, inStock } = getProductInventory(data, p.productId);
+                const {
+                  variants: vs,
+                  totalStock,
+                  inStock,
+                } = getProductInventory(data, p.productId);
                 return (
                   <tr key={p.productId}>
                     <td>
                       <div className="table-product">
-                        <img
-                          src={p.imageUrl}
-                          alt={p.name}
-                          onError={(e) => {
-                            e.currentTarget.src = "/products/tote.svg";
-                          }}
-                        />
                         <b>{p.name}</b>
                       </div>
                     </td>
+                    <td>{merchants.find((m) => m.merchantId === p.merchantId)?.merchantName}</td>
                     <td>
                       {
                         categories.find((c) => c.categoryId === p.categoryId)
@@ -146,7 +149,11 @@ export default function MerchantProducts() {
                     </td>
                     <td>
                       {totalStock}
-                      <small className={"stock block " + (!inStock ? "unavailable" : "")}>
+                      <small
+                        className={
+                          "stock block " + (!inStock ? "unavailable" : "")
+                        }
+                      >
                         {inStock ? "In Stock" : "Out of Stock"}
                       </small>
                     </td>
@@ -191,7 +198,7 @@ export default function MerchantProducts() {
       {editing !== undefined && (
         <ProductForm
           product={editing ?? undefined}
-          merchantId={merchant}
+          merchantId={merchant === "all" ? "" : merchant}
           onClose={() => setEditing(undefined)}
         />
       )}{" "}
@@ -201,11 +208,11 @@ export default function MerchantProducts() {
           description={
             "“" +
             deleting.name +
-            "” will be removed from the catalog and any carts. Existing order history is preserved."
+            "” will be deleted only if it has no order history. For sold products, set status to inactive."
           }
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            deleteProduct(deleting.productId);
+          onConfirm={async () => {
+            await deleteProduct(deleting.productId);
             setDeleting(null);
           }}
         />

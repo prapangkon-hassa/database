@@ -3,9 +3,11 @@ import { LockKeyhole } from "lucide-react";
 
 export function OrderSummary({
   subtotal,
+  discount = 0,
   children,
 }: {
   subtotal: number;
+  discount?: number;
   children?: React.ReactNode;
 }) {
   return (
@@ -23,11 +25,11 @@ export function OrderSummary({
       </div>
       <div className="summary-row">
         <span>Discount</span>
-        <span>{money(0)}</span>
+        <span>{money(discount)}</span>
       </div>
       <div className="summary-total">
         <b>Total</b>
-        <b>{money(subtotal + shippingFee(subtotal))}</b>
+        <b>{money(subtotal + shippingFee(subtotal) - discount)}</b>
       </div>
       {children}
       <p className="summary-note">

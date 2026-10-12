@@ -5,7 +5,6 @@ export interface Product {
   categoryId: string;
   name: string;
   description: string;
-  imageUrl: string;
   active: boolean;
 }
 
@@ -13,11 +12,11 @@ export interface ProductVariant {
   variantId: string;
   productId: string;
   variantName: string;
-  color: string;
-  size: string;
   sku: string;
   price: number;
   stockQuantity: number;
+  originalStockQuantity?: number;
+  status: "active" | "inactive";
 }
 
 export interface ProductInput extends Omit<Product, "productId"> {

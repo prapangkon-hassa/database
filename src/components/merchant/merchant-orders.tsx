@@ -3,7 +3,6 @@ import { Modal } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/display";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
-import { merchants } from "@/data/mock-merchants";
 import { date, money } from "@/lib/utils";
 import { getMerchantOrders } from "@/services/orders.service";
 import { ArrowRight } from "lucide-react";
@@ -12,21 +11,22 @@ import { ShipmentActions } from "@/components/shipments/shipment-actions";
 
 export default function MerchantOrders() {
   const { data, ready } = useStore();
-  const [merchant, setMerchant] = useState("m1");
+  const { merchants } = data;
+  const [merchant, setMerchant] = useState("all");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState<string | null>(null);
-  const orders = getMerchantOrders(data, merchant).filter(
+  const orders = (merchant === "all" ? data.orders : getMerchantOrders(data, merchant)).filter(
     (o) =>
       filter === "All" ||
       (filter === "Completed"
         ? o.status === "Completed"
         : o.status !== "Completed" &&
           o.shipments.some(
-            (s) => s.merchantId === merchant && s.shippingStatus === filter,
+            (s) => (merchant === "all" || s.merchantId === merchant) && s.shippingStatus === filter,
           )),
   );
   const order = data.orders.find((o) => o.orderId === selected);
-  const shipment = order?.shipments.find((s) => s.merchantId === merchant);
+  const shipments = order?.shipments.filter((s) => merchant === "all" || s.merchantId === merchant) ?? [];
   return (
     <div className="section merchant-section">
       <div className="page-heading row between wrap">
@@ -47,6 +47,7 @@ export default function MerchantOrders() {
             }}
             aria-label="Select merchant"
           >
+            <option value="all">All merchants — ทุกร้าน</option>
             {merchants.map((m) => (
               <option key={m.merchantId} value={m.merchantId}>
                 {m.merchantName}
@@ -91,17 +92,17 @@ export default function MerchantOrders() {
                 <th>Order / date</th>
                 <th>Customer</th>
                 <th>Items</th>
-                <th>Merchant subtotal</th>
+                <th>{merchant === "all" ? "Items subtotal" : "Merchant subtotal"}</th>
                 <th>Payment</th>
                 <th>Order status</th>
-                <th>Shipment</th>
+                <th>Merchant / Shipment</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {orders.map((o) => {
-                const items = o.items.filter((i) => i.merchantId === merchant);
-                const s = o.shipments.find((s) => s.merchantId === merchant);
+                const items = o.items.filter((i) => merchant === "all" || i.merchantId === merchant);
+                const visibleShipments = o.shipments.filter((s) => merchant === "all" || s.merchantId === merchant);
                 return (
                   <tr key={o.orderId}>
                     <td>
@@ -125,7 +126,12 @@ export default function MerchantOrders() {
                       <StatusBadge status={o.status} />
                     </td>
                     <td>
-                      <StatusBadge status={s?.shippingStatus ?? "Pending"} />
+                      {visibleShipments.map((s) => (
+                        <div key={s.shipmentId} className="mb-2">
+                          <small className="block">{merchants.find((m) => m.merchantId === s.merchantId)?.merchantName}</small>
+                          <StatusBadge status={s.shippingStatus} />
+                        </div>
+                      ))}
                     </td>
                     <td>
                       <button
@@ -143,7 +149,7 @@ export default function MerchantOrders() {
           </table>
         </div>
       )}
-      {order && shipment && (
+      {order && (
         <Modal
           title={"Order " + order.orderId}
           onClose={() => setSelected(null)}
@@ -152,23 +158,18 @@ export default function MerchantOrders() {
             <span>
               Order <StatusBadge status={order.status} />
             </span>
-            <span>
-              Shipment <StatusBadge status={shipment.shippingStatus} />
-            </span>
           </div>
           <p className="muted">
             {order.address.fullName} · {order.address.phone}
           </p>
-          <p className="muted text-sm mb-4">
-            {order.address.addressLine}, {order.address.district},{" "}
-            {order.address.province} {order.address.postalCode}
-          </p>
+          <p className="muted text-sm mb-4">{order.address.addressLine}</p>
           {order.items
-            .filter((i) => i.merchantId === merchant)
+            .filter((i) => merchant === "all" || i.merchantId === merchant)
             .map((i) => (
               <div className="summary-row" key={i.orderItemId}>
                 <span>
                   {i.productName}
+                  {merchant === "all" && <small className="block">{merchants.find((m) => m.merchantId === i.merchantId)?.merchantName}</small>}
                   <small className="block">
                     {i.variantName} · {money(i.unitPrice)} × {i.quantity}
                   </small>
@@ -184,14 +185,17 @@ export default function MerchantOrders() {
             <span>{order.payment.paymentMethod}</span>
             <StatusBadge status={order.payment.paymentStatus} />
           </div>
-          {shipment.trackingNumber && (
-            <p className="notice">
-              {shipment.carrier} · {shipment.trackingNumber}
-            </p>
-          )}
-          {!["Cancelled", "Completed"].includes(order.status) && (
-            <ShipmentActions key={shipment.shipmentId} shipment={shipment} />
-          )}
+          {shipments.map((shipment) => (
+            <section key={shipment.shipmentId} className="mt-5" aria-label={"Shipment " + shipment.shipmentId}>
+              <div className="row between wrap">
+                <b>{merchants.find((m) => m.merchantId === shipment.merchantId)?.merchantName}</b>
+                <StatusBadge status={shipment.shippingStatus} />
+              </div>
+              <small className="muted">Shipment #{shipment.shipmentId}</small>
+              {shipment.trackingNumber && <p className="notice">{shipment.carrier} · {shipment.trackingNumber}</p>}
+              {!["Cancelled", "Completed"].includes(order.status) && <ShipmentActions shipment={shipment} />}
+            </section>
+          ))}
         </Modal>
       )}
     </div>

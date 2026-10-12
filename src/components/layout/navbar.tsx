@@ -18,7 +18,10 @@ export function Navbar() {
       if (menuRef.current) menuRef.current.open = false;
     }
     function onSiteNavigation(event: Event) {
-      const url = new URL((event as CustomEvent<string>).detail, window.location.href);
+      const url = new URL(
+        (event as CustomEvent<string>).detail,
+        window.location.href,
+      );
       setHomeSection(url.hash === "#catalog" ? "products" : "home");
       if (menuRef.current) menuRef.current.open = false;
     }
@@ -34,6 +37,9 @@ export function Navbar() {
       window.removeEventListener(SITE_NAVIGATION_EVENT, onSiteNavigation);
     };
   }, [pathname]);
+
+  // Merchant pages have their own panel navigation.
+  if (pathname === "/merchant" || pathname.startsWith("/merchant/")) return null;
 
   const homeActive = pathname === "/" && homeSection === "home";
   const productsActive =
@@ -104,11 +110,15 @@ export function Navbar() {
             </Link>
             <details ref={menuRef} className="user-menu">
               <summary aria-label="Account menu">
-                <span className="avatar">AM</span>
+                <span className="avatar">DC</span>
                 <ChevronDown size={13} />
               </summary>
               <div>
-                <b>Alex Morgan</b>
+                <b>
+                  {data.customers.find(
+                    (c) => c.customerId === data.currentCustomerId,
+                  )?.fullName ?? "Customer"}
+                </b>
                 <small>Demo customer</small>
                 <Link href="/orders">My orders</Link>
                 <Link href="/merchant/products">
@@ -122,4 +132,3 @@ export function Navbar() {
     </>
   );
 }
-

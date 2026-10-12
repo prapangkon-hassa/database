@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:config": "node scripts/setup-database.mjs",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose stop",
+    "db:init": "npm --prefix backend run db:init",
+    "dev:api": "npm --prefix backend run dev"
   },
   "dependencies": {
     "next": "^16.0.0",

@@ -1,11 +1,7 @@
 "use client";
-import { initialData } from "@/data/initial-store";
 import * as cartService from "@/services/cart.service";
-import * as checkoutService from "@/services/checkout.service";
-import * as productsService from "@/services/products.service";
-import * as reviewsService from "@/services/reviews.service";
-import * as shipmentsService from "@/services/shipments.service";
-import {
+import { api } from "@/services/api";
+import type {
   CheckoutInput,
   ProductInput,
   Review,
@@ -14,169 +10,209 @@ import {
 } from "@/types";
 import {
   createContext,
-  ReactNode,
   useContext,
   useEffect,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
+const empty: StoreData = {
+  products: [],
+  variants: [],
+  orders: [],
+  reviews: [],
+  cart: [],
+  merchants: [],
+  categories: [],
+  customers: [],
+  currentCustomerId: "1",
+  report: [],
+};
 type Store = {
   data: StoreData;
   ready: boolean;
   notice: string;
+  refresh: () => Promise<void>;
   addToCart: (id: string, quantity: number) => boolean;
   setQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
-  saveProduct: (input: ProductInput, id?: string) => void;
-  deleteProduct: (id: string) => void;
-  checkout: (input: CheckoutInput) => string;
+  saveProduct: (input: ProductInput, id?: string) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  checkout: (input: CheckoutInput) => Promise<string>;
   updateShipment: (
     id: string,
     status: ShippingStatus,
     carrier?: string,
     tracking?: string,
-  ) => void;
+  ) => Promise<void>;
   saveReview: (
     input: Pick<Review, "productId" | "rating" | "comment">,
     id?: string,
-  ) => void;
-  deleteReview: (id: string) => void;
+  ) => Promise<void>;
+  deleteReview: (id: string) => Promise<void>;
 };
 const Context = createContext<Store | null>(null);
-const key = "ef-demo-v1";
-
-function readStoredData(raw: string | null): StoreData {
-  if (!raw) return initialData;
-  const candidate = JSON.parse(raw) as StoreData;
-  if (
-    !candidate ||
-    !["products", "variants", "orders", "reviews", "cart"].every((k) =>
-      Array.isArray(candidate[k as keyof StoreData]),
-    ) ||
-    !candidate.variants.every((v) =>
-      v && typeof v.variantId === "string" && typeof v.productId === "string" &&
-      Number.isInteger(v.stockQuantity) && v.stockQuantity >= 0,
-    )
-  ) throw new Error("Invalid saved inventory.");
-  return { ...candidate, cart: cartService.cleanCart(candidate) };
-}
-
+const cartKey = "ef-api-cart-v1";
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<StoreData>(initialData);
-  const ref = useRef(data);
-  const [ready, setReady] = useState(false);
-  const [notice, setNotice] = useState("");
-  /* eslint-disable react-hooks/set-state-in-effect -- Initial browser-storage hydration intentionally follows server rendering. */
-  useEffect(() => {
-    let loaded = initialData;
-    try {
-      loaded = readStoredData(localStorage.getItem(key));
-    } catch {
-      setNotice(
-        "Saved demo data could not be loaded. Starting with sample data.",
-      );
-    }
-    ref.current = loaded;
-    // Hydrate browser-only demo storage after the server render.
-
-    setData(loaded);
-    setReady(true);
-
-    // Other tabs have their own Context instance; accept persisted changes
-    // without writing them back (which would cause a storage event loop).
-    function syncStoredData(event: StorageEvent) {
-      if (event.storageArea !== localStorage || (event.key !== key && event.key !== null)) return;
-      try {
-        const next = readStoredData(event.newValue);
-        ref.current = next;
-        setData(next);
-      } catch {
-        setNotice("Saved inventory could not be synchronized. Keeping current data.");
-      }
-    }
-    window.addEventListener("storage", syncStoredData);
-    return () => window.removeEventListener("storage", syncStoredData);
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  useEffect(() => {
-    if (notice) {
-      const timer = setTimeout(() => setNotice(""), 4500);
-      return () => clearTimeout(timer);
-    }
-  }, [notice]);
+  const [data, setData] = useState(empty),
+    [ready, setReady] = useState(false),
+    [notice, setNotice] = useState(""),
+    [error, setError] = useState("");
+  const ref = useRef(data),
+    generation = useRef(0),
+    pending = useRef(false);
   function commit(next: StoreData) {
     ref.current = next;
     setData(next);
+  }
+  function saveCart(next: StoreData) {
+    commit(next);
     try {
-      localStorage.setItem(key, JSON.stringify(next));
+      localStorage.setItem(cartKey, JSON.stringify(next.cart));
     } catch {
-      setNotice("Storage is unavailable. Changes will last for this session.");
+      setNotice("Cart storage is unavailable");
+    }
+  }
+  async function refresh() {
+    const version = ++generation.current;
+    try {
+      const result = await api<Omit<StoreData, "cart">>("/store");
+      if (version !== generation.current) return;
+      commit({ ...result, cart: ref.current.cart });
+      setReady(true);
+      setError("");
+    } catch (e) {
+      if (version === generation.current)
+        setError(e instanceof Error ? e.message : "API unavailable");
+    }
+  }
+  useEffect(() => {
+    try {
+      const cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+      if (Array.isArray(cart))
+        ref.current = {
+          ...ref.current,
+          cart: cart.filter(
+            (i) =>
+              i &&
+              typeof i.variantId === "string" &&
+              Number.isInteger(i.quantity) &&
+              i.quantity > 0,
+          ),
+        };
+    } catch {}
+    void refresh();
+    const sync = () => {
+      if (!pending.current) void refresh();
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key === cartKey) {
+        try {
+          const cart = JSON.parse(event.newValue || "[]");
+          if (Array.isArray(cart)) commit({ ...ref.current, cart });
+        } catch {}
+      }
+      sync();
+    };
+    const timer = setInterval(sync, 5000);
+    window.addEventListener("focus", sync);
+    window.addEventListener("storage", storage);
+    const token = generation;
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", sync);
+      window.removeEventListener("storage", storage);
+      token.current++;
+    };
+    // One shared snapshot; polling/focus also picks up edits made in pgAdmin.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (notice) {
+      const t = setTimeout(() => setNotice(""), 4500);
+      return () => clearTimeout(t);
+    }
+  }, [notice]);
+  async function mutate<T>(
+    path: string,
+    method: string,
+    body?: unknown,
+  ): Promise<T> {
+    if (pending.current)
+      throw new Error("Please wait for the current operation");
+    pending.current = true;
+    generation.current++;
+    try {
+      const result = await api<T>(path, method, body);
+      await refresh();
+      return result;
+    } finally {
+      pending.current = false;
     }
   }
   const value: Store = {
     data,
     ready,
     notice,
-    // ส่งงานแต่ละหมวดให้ service; context รับผิดชอบเก็บ state และแจ้งผล
+    refresh,
     addToCart: (id, quantity) => {
       try {
-        commit(cartService.addCartItem(ref.current, id, quantity));
+        saveCart(cartService.addCartItem(ref.current, id, quantity));
         setNotice("Added to your cart");
         return true;
-      } catch (error) {
-        setNotice(
-          error instanceof Error ? error.message : "Could not add this item.",
-        );
+      } catch (e) {
+        setNotice((e as Error).message);
         return false;
       }
     },
-    setQuantity: (id, quantity) => {
-      commit(cartService.setCartQuantity(ref.current, id, quantity));
-    },
-    removeItem: (id) => {
-      commit(cartService.removeCartItem(ref.current, id));
-    },
-    saveProduct: (input, id) => {
-      commit(
-        id
-          ? productsService.updateProduct(ref.current, id, input)
-          : productsService.createProduct(ref.current, input),
+    setQuantity: (id, n) =>
+      saveCart(cartService.setCartQuantity(ref.current, id, n)),
+    removeItem: (id) => saveCart(cartService.removeCartItem(ref.current, id)),
+    saveProduct: async (input, id) => {
+      await mutate(
+        "/products" + (id ? "/" + id : ""),
+        id ? "PUT" : "POST",
+        input,
       );
-      setNotice(id ? "Product updated" : "Product created");
+      setNotice("Product saved");
     },
-    deleteProduct: (id) => {
-      commit(productsService.deleteProduct(ref.current, id));
-      setNotice("Product deleted");
+    deleteProduct: async (id) => {
+      await mutate("/products/" + id, "DELETE");
     },
-    checkout: (input) => {
-      const result = checkoutService.checkout(ref.current, input);
-      commit(result.data);
+    checkout: async (input) => {
+      const result = await mutate<{ orderId: string }>(
+        "/orders/checkout",
+        "POST",
+        { ...input, items: ref.current.cart },
+      );
+      saveCart({ ...ref.current, cart: [] });
       return result.orderId;
     },
-    updateShipment: (id, status, carrier, tracking) => {
-      commit(
-        shipmentsService.updateShipmentStatus(
-          ref.current,
-          id,
-          status,
-          carrier,
-          tracking,
-        ),
+    updateShipment: async (id, status, carrier, tracking) => {
+      await mutate("/shipments/" + id, "PATCH", { status, carrier, tracking });
+      setNotice("Shipment updated");
+    },
+    saveReview: async (input, id) => {
+      await mutate(
+        "/reviews" + (id ? "/" + id : ""),
+        id ? "PUT" : "POST",
+        input,
       );
-      setNotice("Shipment marked " + status.toLowerCase());
     },
-    saveReview: (input, id) => {
-      commit(reviewsService.saveReview(ref.current, input, id));
-      setNotice("Review saved");
-    },
-    deleteReview: (id) => {
-      commit(reviewsService.deleteReview(ref.current, id));
-      setNotice("Review deleted");
+    deleteReview: async (id) => {
+      await mutate("/reviews/" + id, "DELETE");
     },
   };
   return (
     <Context.Provider value={value}>
+      {error && (
+        <div className="container notice" role="alert">
+          Cannot load database: {error}{" "}
+          <button className="text-link" onClick={() => void refresh()}>
+            Retry
+          </button>
+        </div>
+      )}
       {children}
       {notice && (
         <div className="toast" role="status">
@@ -188,6 +224,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 }
 export function useStore() {
   const store = useContext(Context);
-  if (!store) throw new Error("StoreProvider is missing");
+  if (!store) throw new Error("StoreProvider missing");
   return store;
 }

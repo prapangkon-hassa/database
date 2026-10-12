@@ -1,7 +1,6 @@
 "use client";
 import { Modal } from "@/components/ui/dialog";
 import { useStore } from "@/context/store-provider";
-import { categories } from "@/data/mock-categories";
 import { Product, ProductInput } from "@/types";
 import { useState } from "react";
 import { blankVariant, VariantEditor } from "./variant-editor";
@@ -16,28 +15,29 @@ export function ProductForm({
   onClose: () => void;
 }) {
   const { data, saveProduct } = useStore();
+  const { categories, merchants } = data;
   const [form, setForm] = useState<ProductInput>({
     merchantId: product?.merchantId ?? merchantId,
     name: product?.name ?? "",
     description: product?.description ?? "",
     categoryId: product?.categoryId ?? "",
-    imageUrl: product?.imageUrl ?? "/products/tote.svg",
     active: product?.active ?? true,
     variants: product
       ? data.variants
           .filter((v) => v.productId === product.productId)
-          .map((v) => ({ ...v }))
+          .map((v) => ({ ...v, originalStockQuantity: v.stockQuantity }))
       : [blankVariant()],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  function submit(e: React.FormEvent) {
+  const [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const next: Record<string, string> = {};
+    if (!form.merchantId) next.merchantId = "Choose a merchant.";
     if (!form.name.trim()) next.name = "Product name is required.";
     if (!form.categoryId) next.categoryId = "Choose a category.";
     if (!form.variants.length) next.variants = "Add at least one variant.";
-    if (form.imageUrl && !/^(https?:\/\/|\/)/.test(form.imageUrl))
-      next.imageUrl = "Use an http(s) URL or a local image path.";
     form.variants.forEach((v, i) => {
       if (!v.variantName.trim())
         next[i + "-variantName"] = "Variant name is required.";
@@ -69,12 +69,12 @@ export function ProductForm({
       );
       return;
     }
+    setBusy(true);
     try {
-      saveProduct(
+      await saveProduct(
         {
           ...form,
           name: form.name.trim(),
-          imageUrl: form.imageUrl || "/products/tote.svg",
         },
         product?.productId,
       );
@@ -86,12 +86,28 @@ export function ProductForm({
             ? error.message
             : "Could not save this product.",
       });
+    } finally {
+      setBusy(false);
     }
   }
   return (
     <Modal title={product ? "Edit product" : "Add a product"} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         <div className="form-grid">
+          <label className="field col-span-full">
+            Merchant
+            <select
+              aria-label="Product merchant"
+              value={form.merchantId}
+              disabled={!!product}
+              onChange={(e) => setForm({ ...form, merchantId: e.target.value })}
+              aria-invalid={!!errors.merchantId}
+            >
+              <option value="">Select a merchant</option>
+              {merchants.map((m) => <option key={m.merchantId} value={m.merchantId}>{m.merchantName}</option>)}
+            </select>
+            {errors.merchantId && <small className="field-error">{errors.merchantId}</small>}
+          </label>
           <label className="field col-span-full">
             Product name
             <input
@@ -133,17 +149,6 @@ export function ProductForm({
               <small className="field-error">{errors.categoryId}</small>
             )}
           </label>
-          <label className="field">
-            Image URL
-            <input
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              aria-invalid={!!errors.imageUrl}
-            />
-            {errors.imageUrl && (
-              <small className="field-error">{errors.imageUrl}</small>
-            )}
-          </label>
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -167,7 +172,7 @@ export function ProductForm({
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
-          <button className="button">
+          <button className="button" disabled={busy}>
             {product ? "Save changes" : "Create product"}
           </button>
         </div>

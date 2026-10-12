@@ -1,8 +1,6 @@
 "use client";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
-import { categories } from "@/data/mock-categories";
-import { merchants } from "@/data/mock-merchants";
 import {
   Armchair,
   ArrowRight,
@@ -22,10 +20,12 @@ import { ProductGrid } from "./product-grid";
 
 export default function Catalog() {
   const { data, ready } = useStore();
+  const { categories, merchants } = data;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [merchant, setMerchant] = useState("all");
   const [sort, setSort] = useState("featured");
+  const [limit, setLimit] = useState(24);
   const products = data.products
     .filter(
       (p) =>
@@ -125,7 +125,7 @@ export default function Catalog() {
             { categoryId: "all", categoryName: "All products" },
             ...categories,
           ].map((c, i) => {
-            const Icon = icons[i];
+            const Icon = icons[i % icons.length];
             return (
               <button
                 key={c.categoryId}
@@ -179,14 +179,25 @@ export default function Catalog() {
         </div>
         <div className="results-row">
           <span>
-            Showing <b>{products.length}</b> products
+            Showing <b>{Math.min(limit, products.length)}</b> of{" "}
+            {products.length} products
           </span>
           <span>Good finds. Fair prices.</span>
         </div>
         {!ready ? (
           <LoadingSkeleton />
         ) : products.length ? (
-          <ProductGrid products={products} />
+          <>
+            <ProductGrid products={products.slice(0, limit)} />
+            {products.length > limit && (
+              <button
+                className="button secondary mt-6"
+                onClick={() => setLimit(limit + 24)}
+              >
+                Show more products
+              </button>
+            )}
+          </>
         ) : (
           <EmptyState
             title="No matches this time"
@@ -209,7 +220,7 @@ export default function Catalog() {
         <div>
           <span className="eyebrow">FROM OUR COMMUNITY</span>
           <h2>Great finds start with great merchants.</h2>
-          <p>Meet TechHub Store, Everyday Market, and Urban Goods.</p>
+          <p>{merchants.length} merchants in the marketplace.</p>
         </div>
         <Link href="/merchant/products" className="button secondary">
           Merchant workspace <ArrowRight size={16} />

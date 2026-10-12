@@ -6,7 +6,10 @@ import type { ComponentProps } from "react";
 export const SITE_NAVIGATION_EVENT = "form:site-navigation";
 
 // แจ้ง navbar แม้ Next.js เปลี่ยนเฉพาะ hash โดยไม่มี hashchange
-type SiteLinkProps = Omit<ComponentProps<typeof Link>, "href" | "onNavigate"> & {
+type SiteLinkProps = Omit<
+  ComponentProps<typeof Link>,
+  "href" | "onNavigate"
+> & {
   href: string;
 };
 

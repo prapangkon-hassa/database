@@ -21,7 +21,7 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <span>© 2026 Form · E-Commerce & Fulfillment</span>
-        <span>University project · Frontend demo</span>
+        <span>University project · Database Systems</span>
       </div>
     </footer>
   );

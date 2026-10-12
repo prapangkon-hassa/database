@@ -1,6 +1,6 @@
 "use client";
 import { X } from "lucide-react";
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 export function Modal({
   title,
@@ -46,17 +46,37 @@ export function ConfirmDialog({
 }: {
   title: string;
   description: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
 }) {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   return (
     <Modal title={title} onClose={onClose}>
       <p className="muted">{description}</p>
+      {error && (
+        <p role="alert" className="field-error">
+          {error}
+        </p>
+      )}
       <div className="actions mt-6">
         <button className="button secondary" onClick={onClose}>
           Cancel
         </button>
-        <button className="button danger" onClick={onConfirm}>
+        <button
+          className="button danger"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await onConfirm();
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
           Delete
         </button>
       </div>

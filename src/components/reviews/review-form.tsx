@@ -18,21 +18,26 @@ export function ReviewForm({
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [comment, setComment] = useState(existing?.comment ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  function submit(e: React.FormEvent) {
+  const [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const next: Record<string, string> = {};
     if (rating < 1 || rating > 5) next.rating = "Choose a rating from 1 to 5.";
     if (!comment.trim()) next.comment = "Please write a short review.";
     setErrors(next);
     if (Object.keys(next).length) return;
+    setBusy(true);
     try {
-      saveReview({ productId, rating, comment }, existing?.reviewId);
+      await saveReview({ productId, rating, comment }, existing?.reviewId);
       onClose();
     } catch (error) {
       setErrors({
         submit:
           error instanceof Error ? error.message : "Could not save review.",
       });
+    } finally {
+      setBusy(false);
     }
   }
   return (
@@ -83,7 +88,9 @@ export function ReviewForm({
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
-          <button className="button">Submit review</button>
+          <button className="button" disabled={busy}>
+            Submit review
+          </button>
         </div>
       </form>
     </Modal>

@@ -5,8 +5,6 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/display";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
-import { currentCustomer } from "@/data/mock-customers";
-import { merchants } from "@/data/mock-merchants";
 import { date, money } from "@/lib/utils";
 import { ArrowLeft, Pencil, Star, Trash2, Truck } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +12,8 @@ import { useState } from "react";
 
 export function OrderDetail({ id }: { id: string }) {
   const { data, ready, deleteReview } = useStore();
+  const { merchants } = data;
+  const currentCustomer = { customerId: data.currentCustomerId };
   const [reviewProduct, setReviewProduct] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const order = data.orders.find(
@@ -70,7 +70,6 @@ export function OrderDetail({ id }: { id: string }) {
               );
               return (
                 <div className="order-detail-item" key={item.orderItemId}>
-                  <img src={item.imageUrl} alt={item.productName} />
                   <div className="grow">
                     <h3>{item.productName}</h3>
                     <p className="muted text-sm">{item.variantName}</p>
@@ -126,6 +125,10 @@ export function OrderDetail({ id }: { id: string }) {
                     <dt>Tracking number</dt>
                     <dd>{s.trackingNumber || "Not yet available"}</dd>
                   </div>
+                  <div>
+                    <dt>Shipping cost</dt>
+                    <dd>{money(s.shippingCost)}</dd>
+                  </div>
                   {s.shippedAt && (
                     <div>
                       <dt>Shipped</dt>
@@ -166,15 +169,25 @@ export function OrderDetail({ id }: { id: string }) {
               <b>Total</b>
               <b>{money(order.totalAmount)}</b>
             </div>
+            <h3 className="mt-5">Payment history</h3>
+            {order.payments.map((payment) => (
+              <div className="summary-row" key={payment.paymentId}>
+                <span>
+                  {payment.paymentMethod}
+                  <small className="block">
+                    {payment.transactionRef ?? "No transaction reference"}
+                  </small>
+                  <StatusBadge status={payment.paymentStatus} />
+                </span>
+                <b>{money(payment.amount)}</b>
+              </div>
+            ))}
           </section>
           <section className="panel form-section">
             <h2>Delivering to</h2>
             <b>{order.address.fullName}</b>
             <p className="muted leading-7 mt-2">
               {order.address.addressLine}
-              <br />
-              {order.address.district}, {order.address.province}{" "}
-              {order.address.postalCode}
               <br />
               {order.address.phone}
             </p>
@@ -198,8 +211,8 @@ export function OrderDetail({ id }: { id: string }) {
           title="Delete your review?"
           description="Your review will be removed from the product page."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            deleteReview(deleting);
+          onConfirm={async () => {
+            await deleteReview(deleting);
             setDeleting(null);
           }}
         />

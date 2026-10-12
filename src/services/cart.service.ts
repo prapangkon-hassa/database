@@ -13,6 +13,7 @@ export function addCartItem(
   const existing = data.cart.find((item) => item.variantId === variantId);
   if (
     !variant ||
+    variant.status !== "active" ||
     !product?.active ||
     quantity < 1 ||
     (existing?.quantity ?? 0) + quantity > variant.stockQuantity
@@ -37,7 +38,8 @@ export function setCartQuantity(
   quantity: number,
 ): StoreData {
   const variant = data.variants.find((item) => item.variantId === variantId);
-  if (!variant || variant.stockQuantity <= 0) return data;
+  if (!variant || variant.status !== "active" || variant.stockQuantity <= 0)
+    return data;
   return {
     ...data,
     cart: data.cart.map((item) =>
@@ -66,6 +68,7 @@ export function cleanCart(data: StoreData) {
     const v = data.variants.find((v) => v.variantId === item.variantId);
     const p = data.products.find((p) => p.productId === v?.productId);
     return v &&
+      v.status === "active" &&
       p?.active &&
       v.stockQuantity > 0 &&
       Number.isFinite(item.quantity)

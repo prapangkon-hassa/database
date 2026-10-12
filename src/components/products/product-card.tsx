@@ -1,8 +1,6 @@
 "use client";
 import { RatingStars } from "@/components/ui/display";
 import { useStore } from "@/context/store-provider";
-import { categories } from "@/data/mock-categories";
-import { merchants } from "@/data/mock-merchants";
 import { money } from "@/lib/utils";
 import { getProductInventory } from "@/services/products.service";
 import { Product } from "@/types";
@@ -11,6 +9,7 @@ import Link from "next/link";
 
 export function ProductCard({ product }: { product: Product }) {
   const { data } = useStore();
+  const { categories, merchants } = data;
   const { variants, inStock } = getProductInventory(data, product.productId);
   const reviews = data.reviews.filter((r) => r.productId === product.productId);
   const rating = reviews.length
@@ -18,26 +17,6 @@ export function ProductCard({ product }: { product: Product }) {
     : 0;
   return (
     <article className="product-card">
-      <Link className="product-image" href={"/products/" + product.productId}>
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = "/products/tote.svg";
-          }}
-        />
-        {!inStock ? (
-          <span className="image-label sold-out">Out of Stock</span>
-        ) : product.productId === "p1" ? (
-          <span className="image-label">Bestseller</span>
-        ) : product.productId === "p3" ? (
-          <span className="image-label light">Everyday favorite</span>
-        ) : null}
-        <span className="image-arrow">
-          <ArrowRight size={17} />
-        </span>
-      </Link>
       <div className="product-content">
         <div className="row between">
           <span className="eyebrow">
@@ -58,7 +37,11 @@ export function ProductCard({ product }: { product: Product }) {
           }
         </p>
         <div className="row between product-price">
-          <b>{variants.length ? money(Math.min(...variants.map((v) => v.price))) : "—"}</b>
+          <b>
+            {variants.length
+              ? money(Math.min(...variants.map((v) => v.price)))
+              : "—"}
+          </b>
           <span className={"stock " + (!inStock ? "unavailable" : "")}>
             {inStock ? "In Stock" : "Out of Stock"}
           </span>

@@ -8,6 +8,7 @@ export interface Shipment {
   trackingNumber: string;
   carrier: string;
   shippingStatus: ShippingStatus;
+  shippingCost: number;
   shippedAt: string | null;
   deliveredAt: string | null;
 }

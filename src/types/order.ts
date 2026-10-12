@@ -35,12 +35,12 @@ export interface OrderItem {
   productId: string;
   merchantId: string;
   categoryId: string;
-  imageUrl: string;
 }
 
 export interface OrderRecord extends Order {
   items: OrderItem[];
   payment: Payment;
+  payments: Payment[];
   shipments: Shipment[];
   address: Address;
 }
