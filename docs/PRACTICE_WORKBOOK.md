@@ -89,7 +89,7 @@ BEGIN เริ่ม transaction; UPDATE เปลี่ยนแถวที�
 ```sql
 BEGIN;
 CALL sp_checkout_order(
-  1, '[{"variantId":"1","quantity":1}]'::jsonb,
+  1, '[{"variant_id":"1","quantity":1}]'::jsonb,
   'ผู้ทดลอง', '0800000000', 'กรุงเทพฯ 10110',
   'Cash on Delivery', '', NULL
 );
@@ -176,7 +176,7 @@ frontend/types/product.ts ต้องตรงกับ JSON นี้ ไม�
 ```ts
 const result = await client.query(
   'SELECT product_name FROM products WHERE product_id = $1',
-  [productId],
+  [product_id],
 );
 ```
 
@@ -184,11 +184,11 @@ await รอฐานข้อมูล; $1 รับค่าที่แยก
 result.rows คือแถวผลลัพธ์; result.rowCount คือจำนวนแถว
 ถ้าเพิ่มช่องใน SELECT ให้ตรวจ type และ component ที่ใช้พร้อมกัน แต่ห้ามเพิ่มคอลัมน์นอก schema โดยไม่แก้แบบออกแบบ
 
-แบบฝึก: เพิ่มการแสดง SKU ใน product card โดยอ่าน data.variants ที่ productId ตรงกัน แล้วทดสอบสินค้าที่มีหลาย variants
+แบบฝึก: เพิ่มการแสดง SKU ใน product card โดยอ่าน data.variants ที่ product_id ตรงกัน แล้วทดสอบสินค้าที่มีหลาย variants
 แบบฝึก: เปลี่ยนข้อความแจ้ง stock ไม่พอใน procedure แล้วรัน logic.sql ใหม่ในฐานฝึก
 แบบฝึก: เขียน SELECT รายการชำระเงินของ order หนึ่ง ดูทั้ง failed และ paid ว่ายังเป็นคนละแถว
 
-การแก้ stock ใช้ originalStockQuantity เทียบกับ stock ตอนบันทึก ถ้ามีคนซื้อระหว่างเปิดฟอร์ม API ตอบ 409 ให้ปิดและเปิดใหม่ ไม่เขียนทับยอดซื้อที่เพิ่งตัด
+การแก้ stock ใช้ original_stock_quantity เทียบกับ stock ตอนบันทึก ถ้ามีคนซื้อระหว่างเปิดฟอร์ม API ตอบ 409 ให้ปิดและเปิดใหม่ ไม่เขียนทับยอดซื้อที่เพิ่งตัด
 เลขนี้เป็นข้อมูลตรวจคำขอ ไม่ใช่ช่องให้ผู้ใช้กรอก และไม่เพิ่มคอลัมน์
 
 ## 11. Frontend ที่ตรงตาราง
@@ -202,7 +202,7 @@ result.rows คือแถวผลลัพธ์; result.rowCount คือ�
 - reviews: คะแนนและข้อความ
 
 ไม่เก็บ products/orders ใน localStorage; ตะกร้า browser ยังเก็บได้โดยไม่ต้องมีตารางใหม่
-couponCode เป็น input ของ procedure ผลเก็บใน discount_amount ตามโจทย์ ไม่จำเป็นต้องเพิ่มตารางคูปอง
+coupon_code เป็น input ของ procedure ผลเก็บใน discount_amount ตามโจทย์ ไม่จำเป็นต้องเพิ่มตารางคูปอง
 
 ## 12. ตรวจและส่งงาน
 

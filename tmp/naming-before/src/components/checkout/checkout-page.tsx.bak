@@ -1,0 +1,243 @@
+"use client";
+import { OrderSummary } from "@/components/cart/order-summary";
+import { useCartLines } from "@/components/cart/use-cart-lines";
+import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
+import { useStore } from "@/context/store-provider";
+import { money } from "@/lib/utils";
+import { CheckoutInput, PaymentMethod } from "@/types";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+const fields: {
+  key: keyof Omit<CheckoutInput, "paymentMethod" | "couponCode">;
+  label: string;
+  type?: string;
+  autoComplete: string;
+}[] = [
+  { key: "fullName", label: "ชื่อและนามสกุลผู้รับ", autoComplete: "name" },
+  { key: "phone", label: "เบอร์โทรศัพท์", type: "tel", autoComplete: "tel" },
+  { key: "addressLine", label: "ที่อยู่จัดส่ง (บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์)", autoComplete: "street-address" },
+];
+
+export function CheckoutPage() {
+  const { ready, checkout } = useStore();
+  const lines = useCartLines();
+  const [form, setForm] = useState<CheckoutInput>({
+    fullName: "",
+    phone: "",
+    addressLine: "",
+    couponCode: "",
+    paymentMethod: "" as PaymentMethod,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [orderId, setOrderId] = useState("");
+  const subtotal = lines.reduce((n, i) => n + i.quantity * i.variant.price, 0);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    const next: Record<string, string> = {};
+    fields.forEach((f) => {
+      if (!form[f.key].trim()) next[f.key] = f.label + ": กรุณากรอกข้อมูล";
+    });
+    if (!form.paymentMethod) next.paymentMethod = "เลือกวิธีชำระเงิน.";
+    setErrors(next);
+    if (Object.keys(next).length) {
+      setTimeout(
+        () =>
+          document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+        0,
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      setOrderId(await checkout(form));
+    } catch (error) {
+      setErrors({
+        submit:
+          error instanceof Error
+            ? error.message
+            : "สั่งซื้อไม่สำเร็จ กรุณาลองอีกครั้ง",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!ready)
+    return (
+      <div className="container section">
+        <LoadingSkeleton />
+      </div>
+    );
+  if (orderId)
+    return (
+      <div className="container section">
+        <div className="success-panel panel">
+          <CheckCircle2 size={54} />
+          <span className="eyebrow">บันทึกคำสั่งซื้อสำเร็จ</span>
+          <h1>ขอบคุณคุณ {form.fullName.split(" ")[0]}.</h1>
+          <p>
+            คำสั่งซื้อทดลองหมายเลข <b>{orderId}</b> ถูกบันทึกแล้ว
+          </p>
+          <p className="muted">
+            ไม่มีการเรียกเก็บเงินจริง ติดตามสถานะและพัสดุได้จากปุ่มด้านล่าง
+          </p>
+          <Link className="button" href={"/orders/" + orderId}>
+            ดูคำสั่งซื้อและติดตามพัสดุ <ArrowRight size={16} />
+          </Link>
+          <Link className="text-link" href="/">
+            เลือกสินค้าเพิ่ม
+          </Link>
+        </div>
+      </div>
+    );
+  if (!lines.length)
+    return (
+      <EmptyState
+        title="ตะกร้ายังว่างอยู่"
+        description="เลือกสินค้าใส่ตะกร้าก่อนยืนยันคำสั่งซื้อ"
+      >
+        <Link className="button" href="/">
+          เลือกซื้อสินค้า
+        </Link>
+      </EmptyState>
+    );
+  function field(f: (typeof fields)[number]) {
+    return (
+      <label
+        className={"field " + (f.key === "addressLine" ? "col-span-full" : "")}
+        key={f.key}
+      >
+        {f.label}
+        <input
+          type={f.type ?? "text"}
+          autoComplete={f.autoComplete}
+          aria-label={f.label}
+          value={form[f.key]}
+          onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+          aria-invalid={!!errors[f.key]}
+          aria-describedby={errors[f.key] ? "error-" + f.key : undefined}
+          required
+        />
+        {errors[f.key] && (
+          <small id={"error-" + f.key} className="field-error">
+            {errors[f.key]}
+          </small>
+        )}
+      </label>
+    );
+  }
+  return (
+    <div className="container section">
+      <Link href="/cart" className="back-link">
+        <ArrowLeft size={15} /> กลับไปแก้ไขตะกร้า
+      </Link>
+      <div className="page-heading">
+        <span className="eyebrow">ขั้นตอนที่ 2 จาก 2 · ข้อมูลจัดส่ง</span>
+        <h1>
+          ยืนยันคำสั่งซื้อ<span className="heading-dot">.</span>
+        </h1>
+        <p>กรอกข้อมูลผู้รับ เลือกวิธีชำระเงิน แล้วตรวจยอดรวมก่อนกดยืนยัน</p>
+      </div>
+      <form noValidate onSubmit={submit} className="checkout-grid">
+        <div className="space-y-6">
+          <section className="panel form-section">
+            <h2>
+              <span className="step-number">1</span> ข้อมูลผู้รับ
+            </h2>
+            <div className="form-grid">{fields.slice(0, 2).map(field)}</div>
+          </section>
+          <section className="panel form-section">
+            <h2>
+              <span className="step-number">2</span> ที่อยู่จัดส่ง
+            </h2>
+            <div className="form-grid">{fields.slice(2).map(field)}</div>
+          </section>
+          <section className="panel form-section">
+            <h2>
+              <span className="step-number">3</span> วิธีชำระเงิน (จำลอง)
+            </h2>
+            <fieldset
+              aria-describedby={
+                errors.paymentMethod ? "payment-error" : undefined
+              }
+            >
+              <legend className="sr-only">เลือกวิธีชำระเงิน</legend>
+              {(
+                [
+                  "QR Payment",
+                  "Credit/Debit Card",
+                  "Cash on Delivery",
+                ] as PaymentMethod[]
+              ).map((method) => (
+                <label className="payment-option" key={method}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method}
+                    checked={form.paymentMethod === method}
+                    onChange={() => setForm({ ...form, paymentMethod: method })}
+                  />
+                  <span>{{ "QR Payment": "สแกน QR", "Credit/Debit Card": "บัตรเครดิต / เดบิต", "Cash on Delivery": "เก็บเงินปลายทาง" }[method]}</span>
+                  <small>จำลอง</small>
+                </label>
+              ))}
+            </fieldset>
+            {errors.paymentMethod && (
+              <small id="payment-error" className="field-error">
+                {errors.paymentMethod}
+              </small>
+            )}
+          </section>
+        </div>
+        <OrderSummary
+          subtotal={subtotal}
+          discount={
+            form.couponCode.trim().toUpperCase() === "STUDENT10" &&
+            subtotal >= 500
+              ? Math.min(Math.round(subtotal * 10) / 100, 200)
+              : 0
+          }
+        >
+          <label className="field">
+            รหัสส่วนลด (ไม่บังคับ)
+            <input
+              aria-label="รหัสส่วนลด (ไม่บังคับ)"
+              value={form.couponCode}
+              onChange={(e) => setForm({ ...form, couponCode: e.target.value })}
+            />
+            <small>
+              ใช้ STUDENT10 ลด 10% สูงสุด 200 บาท เมื่อซื้อสินค้าครบ 500 บาท
+            </small>
+          </label>
+          <div className="checkout-items">
+            {lines.map((i) => (
+              <div key={i.variantId}>
+                <div className="row between gap-4">
+                  <span>
+                    {i.product.name} × {i.quantity}
+                  </span>
+                  <b>{money(i.variant.price * i.quantity)}</b>
+                </div>
+                <small>
+                  {i.variant.variantName} · {money(i.variant.price)} / ชิ้น
+                </small>
+              </div>
+            ))}
+          </div>
+          {errors.submit && (
+            <p role="alert" className="field-error mb-4">
+              {errors.submit}
+            </p>
+          )}
+          <button disabled={busy} className="button w-full" type="submit">
+            {busy ? "กำลังบันทึกคำสั่งซื้อ…" : "ยืนยันคำสั่งซื้อทดลอง"}
+            {!busy && <ArrowRight size={16} />}
+          </button>
+        </OrderSummary>
+      </form>
+    </div>
+  );
+}

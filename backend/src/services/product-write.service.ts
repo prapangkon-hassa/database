@@ -1,11 +1,11 @@
 import { transaction } from "../lib/transaction.js";
 import { fail, id, text, number } from "../lib/validation.js";
-type Input = Record<string, any>;
-export async function saveProduct(body: Input, productId?: string) {
+type input = Record<string, any>;
+export async function save_product(body: input, product_id?: string) {
   const name = text(body.name, "product name", 150),
     description = text(body.description ?? "", "description", 10000, true);
-  const merchant = id(body.merchantId),
-    category = id(body.categoryId);
+  const merchant = id(body.merchant_id),
+    category = id(body.category_id);
   if (
     typeof body.active !== "boolean" ||
     !Array.isArray(body.variants) ||
@@ -13,9 +13,9 @@ export async function saveProduct(body: Input, productId?: string) {
     body.variants.length > 100
   )
     fail("Invalid product variants");
-  const variants = body.variants.map((v: Input) => {
+  const variants = body.variants.map((v: input) => {
     const price = number(v.price, "price", 9999999999.99),
-      stock = number(v.stockQuantity, "stock", 2147483647);
+      stock = number(v.stock_quantity, "stock", 2147483647);
     if (
       !Number.isInteger(stock) ||
       Math.abs(price * 100 - Math.round(price * 100)) > 0.0001
@@ -23,27 +23,27 @@ export async function saveProduct(body: Input, productId?: string) {
       fail("Use whole stock and at most 2 price decimals");
     if (!["active", "inactive"].includes(v.status))
       fail("Invalid variant status");
-    const originalStock = v.variantId
-      ? number(v.originalStockQuantity, "original stock", 2147483647)
+    const original_stock = v.variant_id
+      ? number(v.original_stock_quantity, "original stock", 2147483647)
       : null;
     return {
-      variantId: v.variantId ? id(v.variantId) : null,
-      name: text(v.variantName, "variant name", 100),
+      variant_id: v.variant_id ? id(v.variant_id) : null,
+      name: text(v.variant_name, "variant name", 100),
       sku: text(v.sku, "SKU", 60),
       price,
       stock,
       status: v.status,
-      originalStock,
+      original_stock,
     };
   });
   return transaction(async (c) => {
-    let pid = productId;
+    let pid = product_id;
     if (pid) {
       const existing = await c.query(
         "SELECT * FROM products WHERE product_id=$1 FOR UPDATE",
         [pid],
       );
-      if (!existing.rowCount) fail("Product not found", 404);
+      if (!existing.rowCount) fail("product not found", 404);
       if (
         existing.rows[0].merchant_id !== merchant ||
         String(existing.rows[0].category_id) !== category
@@ -89,18 +89,18 @@ export async function saveProduct(body: Input, productId?: string) {
     );
     const kept: string[] = [];
     for (const v of variants) {
-      if (v.variantId) {
+      if (v.variant_id) {
         const changed = await c.query(
           "UPDATE product_variants SET variant_name=$3,sku=$4,price=$5,stock_quantity=$6,status=$7 WHERE variant_id=$1 AND product_id=$2 AND stock_quantity=$8 RETURNING variant_id",
           [
-            v.variantId,
+            v.variant_id,
             pid,
             v.name,
             v.sku,
             v.price,
             v.stock,
             v.status,
-            v.originalStock,
+            v.original_stock,
           ],
         );
         if (!changed.rowCount)
@@ -108,7 +108,7 @@ export async function saveProduct(body: Input, productId?: string) {
             "Stock changed while editing. Close and reopen this form before saving.",
             409,
           );
-        kept.push(v.variantId);
+        kept.push(v.variant_id);
       } else {
         kept.push(
           (
@@ -124,15 +124,15 @@ export async function saveProduct(body: Input, productId?: string) {
       "DELETE FROM product_variants WHERE product_id=$1 AND NOT (variant_id=ANY($2::bigint[]))",
       [pid, kept],
     );
-    return { productId: pid };
+    return { product_id: pid };
   });
 }
-export async function deleteProduct(pid: string) {
+export async function delete_product(pid: string) {
   return transaction(async (c) => {
     const r = await c.query(
       "DELETE FROM products WHERE product_id=$1 RETURNING product_id",
       [pid],
     );
-    if (!r.rowCount) fail("Product not found", 404);
+    if (!r.rowCount) fail("product not found", 404);
   });
 }

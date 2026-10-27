@@ -11,13 +11,13 @@ import Link from "next/link";
 import { useState } from "react";
 
 export function OrderDetail({ id }: { id: string }) {
-  const { data, ready, deleteReview } = useStore();
+  const { data, ready, delete_review } = useStore();
   const { merchants } = data;
-  const currentCustomer = { customerId: data.currentCustomerId };
-  const [reviewProduct, setReviewProduct] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const current_customer = { customer_id: data.current_customer_id };
+  const [review_product, set_review_product] = useState<string | null>(null);
+  const [deleting, set_deleting] = useState<string | null>(null);
   const order = data.orders.find(
-    (o) => o.orderId === id && o.customerId === currentCustomer.customerId,
+    (o) => o.order_id === id && o.customer_id === current_customer.customer_id,
   );
   if (!ready)
     return (
@@ -28,32 +28,33 @@ export function OrderDetail({ id }: { id: string }) {
   if (!order)
     return (
       <EmptyState
-        title="Order not found"
-        description="We couldn’t find this order in your account."
+        title="ไม่พบคำสั่งซื้อ"
+        description="ไม่พบคำสั่งซื้อนี้ในบัญชีทดลองของคุณ"
       >
         <Link className="button" href="/orders">
-          My orders
+          คำสั่งซื้อของฉัน
         </Link>
       </EmptyState>
     );
   return (
     <div className="container section">
       <Link href="/orders" className="back-link">
-        <ArrowLeft size={15} /> All orders
+        <ArrowLeft size={15} /> คำสั่งซื้อทั้งหมด
       </Link>
       <div className="page-heading row between wrap">
         <div>
-          <span className="eyebrow">ORDER DETAILS</span>
-          <h1>{order.orderId}</h1>
-          <p>Placed on {date(order.orderDate)}</p>
+          <span className="eyebrow">รายละเอียดคำสั่งซื้อ</span>
+          <h1>{order.order_id}</h1>
+          <p>สั่งซื้อเมื่อ {date(order.order_date)}</p>
         </div>
         <StatusBadge status={order.status} />
       </div>
       <section className="panel tracking-panel">
         <div className="row between wrap">
-          <h2>Your order’s journey</h2>
+          <h2>สถานะคำสั่งซื้อ</h2>
+          <p className="muted">ซื้อหลายร้านจะแยกพัสดุ · เก็บเงินปลายทางจะแสดงชำระเงินแล้วเมื่อส่งครบ</p>
           {order.status === "Cancelled" && (
-            <span className="field-error">This order was cancelled.</span>
+            <span className="field-error">คำสั่งซื้อนี้ถูกยกเลิกแล้ว</span>
           )}
         </div>
         {order.status !== "Cancelled" && <OrderStatusTimeline order={order} />}
@@ -61,36 +62,36 @@ export function OrderDetail({ id }: { id: string }) {
       <div className="checkout-grid mt-6">
         <div className="space-y-6">
           <section className="panel form-section">
-            <h2>Items in your order</h2>
+            <h2>สินค้าที่สั่งซื้อ</h2>
             {order.items.map((item) => {
               const review = data.reviews.find(
                 (r) =>
-                  r.productId === item.productId &&
-                  r.customerId === currentCustomer.customerId,
+                  r.product_id === item.product_id &&
+                  r.customer_id === current_customer.customer_id,
               );
               return (
-                <div className="order-detail-item" key={item.orderItemId}>
+                <div className="order-detail-item" key={item.order_item_id}>
                   <div className="grow">
-                    <h3>{item.productName}</h3>
-                    <p className="muted text-sm">{item.variantName}</p>
+                    <h3>{item.product_name}</h3>
+                    <p className="muted text-sm">{item.variant_name}</p>
                     <p className="text-sm my-2">
-                      {money(item.unitPrice)} × {item.quantity}
+                      {money(item.unit_price)} × {item.quantity}
                     </p>
                     {order.status === "Completed" && (
                       <div className="row gap-3 wrap">
                         <button
                           className="text-link"
-                          onClick={() => setReviewProduct(item.productId)}
+                          onClick={() => set_review_product(item.product_id)}
                         >
                           {review ? <Pencil size={13} /> : <Star size={13} />}{" "}
-                          {review ? "Edit review" : "Write review"}
+                          {review ? "แก้ไขรีวิว" : "เขียนรีวิว"}
                         </button>
                         {review && (
                           <button
                             className="text-link muted"
-                            onClick={() => setDeleting(review.reviewId)}
+                            onClick={() => set_deleting(review.review_id)}
                           >
-                            <Trash2 size={13} /> Delete review
+                            <Trash2 size={13} /> ลบรีวิว
                           </button>
                         )}
                       </div>
@@ -103,42 +104,42 @@ export function OrderDetail({ id }: { id: string }) {
           </section>
           <section className="panel form-section">
             <h2>
-              <Truck size={19} /> Shipment details
+              <Truck size={19} /> พัสดุแยกตามร้านค้า
             </h2>
             {order.shipments.map((s) => (
-              <div className="shipment-info" key={s.shipmentId}>
+              <div className="shipment-info" key={s.shipment_id}>
                 <div className="row between wrap">
                   <b>
                     {
-                      merchants.find((m) => m.merchantId === s.merchantId)
-                        ?.merchantName
+                      merchants.find((m) => m.merchant_id === s.merchant_id)
+                        ?.merchant_name
                     }
                   </b>
-                  <StatusBadge status={s.shippingStatus} />
+                  <StatusBadge status={s.shipping_status} />
                 </div>
                 <dl className="info-list">
                   <div>
-                    <dt>Carrier</dt>
-                    <dd>{s.carrier || "Awaiting assignment"}</dd>
+                    <dt>บริษัทขนส่ง</dt>
+                    <dd>{s.carrier || "รอร้านค้าระบุขนส่ง"}</dd>
                   </div>
                   <div>
-                    <dt>Tracking number</dt>
-                    <dd>{s.trackingNumber || "Not yet available"}</dd>
+                    <dt>เลขติดตามพัสดุ</dt>
+                    <dd>{s.tracking_number || "รอร้านค้าจัดส่ง"}</dd>
                   </div>
                   <div>
-                    <dt>Shipping cost</dt>
-                    <dd>{money(s.shippingCost)}</dd>
+                    <dt>ค่าจัดส่ง</dt>
+                    <dd>{money(s.shipping_cost)}</dd>
                   </div>
-                  {s.shippedAt && (
+                  {s.shipped_at && (
                     <div>
-                      <dt>Shipped</dt>
-                      <dd>{date(s.shippedAt)}</dd>
+                      <dt>วันที่จัดส่ง</dt>
+                      <dd>{date(s.shipped_at)}</dd>
                     </div>
                   )}
-                  {s.deliveredAt && (
+                  {s.delivered_at && (
                     <div>
-                      <dt>Delivered</dt>
-                      <dd>{date(s.deliveredAt)}</dd>
+                      <dt>วันที่ส่งถึง</dt>
+                      <dd>{date(s.delivered_at)}</dd>
                     </div>
                   )}
                 </dl>
@@ -148,72 +149,72 @@ export function OrderDetail({ id }: { id: string }) {
         </div>
         <div className="space-y-6">
           <section className="panel summary">
-            <h2>Payment & total</h2>
+            <h2>การชำระเงินและยอดรวม</h2>
             <div className="row between mb-6">
-              <span>{order.payment.paymentMethod}</span>
-              <StatusBadge status={order.payment.paymentStatus} />
+              <span>{order.payment.payment_method}</span>
+              <StatusBadge status={order.payment.payment_status} />
             </div>
             <div className="summary-row">
-              <span>Subtotal</span>
+              <span>ราคาสินค้ารวม</span>
               <span>{money(order.subtotal)}</span>
             </div>
             <div className="summary-row">
-              <span>Discount</span>
-              <span>−{money(order.discountAmount)}</span>
+              <span>ส่วนลด</span>
+              <span>−{money(order.discount_amount)}</span>
             </div>
             <div className="summary-row">
-              <span>Shipping</span>
-              <span>{money(order.shippingFee)}</span>
+              <span>ค่าจัดส่ง</span>
+              <span>{money(order.shipping_fee)}</span>
             </div>
             <div className="summary-total">
-              <b>Total</b>
-              <b>{money(order.totalAmount)}</b>
+              <b>ยอดรวมสุทธิ</b>
+              <b>{money(order.total_amount)}</b>
             </div>
-            <h3 className="mt-5">Payment history</h3>
+            <h3 className="mt-5">ประวัติการชำระเงิน</h3>
             {order.payments.map((payment) => (
-              <div className="summary-row" key={payment.paymentId}>
+              <div className="summary-row" key={payment.payment_id}>
                 <span>
-                  {payment.paymentMethod}
+                  {payment.payment_method}
                   <small className="block">
-                    {payment.transactionRef ?? "No transaction reference"}
+                    {payment.transaction_ref ?? "ไม่มีเลขอ้างอิง"}
                   </small>
-                  <StatusBadge status={payment.paymentStatus} />
+                  <StatusBadge status={payment.payment_status} />
                 </span>
                 <b>{money(payment.amount)}</b>
               </div>
             ))}
           </section>
           <section className="panel form-section">
-            <h2>Delivering to</h2>
-            <b>{order.address.fullName}</b>
+            <h2>ที่อยู่ผู้รับ</h2>
+            <b>{order.address.full_name}</b>
             <p className="muted leading-7 mt-2">
-              {order.address.addressLine}
+              {order.address.address_line}
               <br />
               {order.address.phone}
             </p>
           </section>
         </div>
       </div>
-      {reviewProduct && (
+      {review_product && (
         <ReviewForm
-          key={reviewProduct}
-          productId={reviewProduct}
+          key={review_product}
+          product_id={review_product}
           existing={data.reviews.find(
             (r) =>
-              r.productId === reviewProduct &&
-              r.customerId === currentCustomer.customerId,
+              r.product_id === review_product &&
+              r.customer_id === current_customer.customer_id,
           )}
-          onClose={() => setReviewProduct(null)}
+          on_close={() => set_review_product(null)}
         />
       )}{" "}
       {deleting && (
         <ConfirmDialog
-          title="Delete your review?"
-          description="Your review will be removed from the product page."
-          onClose={() => setDeleting(null)}
-          onConfirm={async () => {
-            await deleteReview(deleting);
-            setDeleting(null);
+          title="ลบรีวิวนี้หรือไม่?"
+          description="รีวิวนี้จะถูกลบออกจากหน้าสินค้า"
+          on_close={() => set_deleting(null)}
+          on_confirm={async () => {
+            await delete_review(deleting);
+            set_deleting(null);
           }}
         />
       )}

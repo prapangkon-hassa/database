@@ -70,6 +70,7 @@ Register Server → ตั้งชื่อ `Fulfillment Local` → Connection:
 
 ## ไฟล์สำคัญ
 
+- [docs/CODE_WALKTHROUGH_TH.md](docs/CODE_WALKTHROUGH_TH.md): คู่มือภาษาไทยอ่านทุกหมวดไฟล์ ตำแหน่งฐานข้อมูล CRUD และเส้นทาง UI → API → SQL พร้อมคำอธิบายคำสั่ง
 - [database/schema.sql](database/schema.sql): 10 ตาราง, PK/FK/UNIQUE/CHECK/DEFAULT และ indexes
 - [database/data.sql](database/data.sql): ข้อมูลสมมติที่บันทึกลง PostgreSQL จริง
 - [database/logic.sql](database/logic.sql): checkout procedure, shipment triggers, reporting view
@@ -97,7 +98,7 @@ Register Server → ตั้งชื่อ `Fulfillment Local` → Connection:
 ระบบบนเครื่องสำหรับส่งงาน: ลูกค้าทดสอบ customer_id=1 และ merchant workspace เลือกร้านค้าได้ ไม่มีระบบ login/การตรวจสิทธิ์ใช้งานหลายคนจริง จึงผูก API และ PostgreSQL กับ localhost
 ใช้โครง 10 ตารางตาม PDF: ไม่มี image_url, color, size; ใช้ variant_name และ shipping_address ช่องเดียว
 ชื่อที่หน้าเว็บใช้ เช่น name/active เป็นการแปลง product_name/status ไม่ใช่คอลัมน์ใหม่
-ตะกร้า, couponCode และ originalStockQuantity เป็นข้อมูลคำขอ/ตรวจการแก้พร้อมกัน ไม่เพิ่มตารางหรือคอลัมน์
+ตะกร้า, coupon_code และ original_stock_quantity เป็นข้อมูลคำขอ/ตรวจการแก้พร้อมกัน ไม่เพิ่มตารางหรือคอลัมน์
 ราคาซื้อเก็บ snapshot ใน order_items.unit_price; ชื่อสินค้า/ตัวเลือกยัง JOIN จากตารางปัจจุบันตาม schema
 
 ## ตรวจงาน

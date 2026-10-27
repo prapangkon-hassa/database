@@ -1,24 +1,24 @@
 // รูปแบบข้อมูลที่สอดคล้องกับตาราง products และ product_variants
-export interface Product {
-  productId: string;
-  merchantId: string;
-  categoryId: string;
+export interface product {
+  product_id: string;
+  merchant_id: string;
+  category_id: string;
   name: string;
   description: string;
   active: boolean;
 }
 
-export interface ProductVariant {
-  variantId: string;
-  productId: string;
-  variantName: string;
+export interface product_variant {
+  variant_id: string;
+  product_id: string;
+  variant_name: string;
   sku: string;
   price: number;
-  stockQuantity: number;
-  originalStockQuantity?: number;
+  stock_quantity: number;
+  original_stock_quantity?: number;
   status: "active" | "inactive";
 }
 
-export interface ProductInput extends Omit<Product, "productId"> {
-  variants: ProductVariant[];
+export interface product_input extends Omit<product, "product_id"> {
+  variants: product_variant[];
 }

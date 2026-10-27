@@ -1,9 +1,9 @@
 // รูปแบบข้อมูลที่สอดคล้องกับตาราง reviews
-export interface Review {
-  reviewId: string;
-  customerId: string;
-  productId: string;
+export interface review {
+  review_id: string;
+  customer_id: string;
+  product_id: string;
   rating: number;
   comment: string;
-  createdAt: string;
+  created_at: string;
 }

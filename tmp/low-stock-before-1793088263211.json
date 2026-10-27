@@ -1,0 +1,22 @@
+[
+  {
+    "variant_id": "7",
+    "product_id": "4",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "8",
+    "product_id": "4",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "11",
+    "product_id": "6",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "12",
+    "product_id": "6",
+    "stock_quantity": 100
+  }
+]

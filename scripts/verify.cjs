@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Standalone browser verification script. */
 const assert = require("node:assert/strict");
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || "playwright");
-const { verifyInventory } = require("./verify-inventory.cjs");
+const { verify_inventory } = require("./verify-inventory.cjs");
 (async () => {
   const browser = await chromium.launch({ channel: "chrome", headless: true });
   try {
@@ -11,7 +11,7 @@ const { verifyInventory } = require("./verify-inventory.cjs");
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    console.log(await verifyInventory(page));
+    console.log(await verify_inventory(page));
     for (const route of [
       "/",
       "/products/1",
@@ -26,7 +26,7 @@ const { verifyInventory } = require("./verify-inventory.cjs");
       assert.equal(r.status(), 200, route);
     }
     await page
-      .getByRole("heading", { name: "Merchant sales summary" })
+      .getByRole("heading", { name: "merchant sales summary" })
       .waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("http://localhost:3000/products/1");

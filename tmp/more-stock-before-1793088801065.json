@@ -1,0 +1,62 @@
+[
+  {
+    "variant_id": "19",
+    "product_id": "10",
+    "stock_quantity": 95
+  },
+  {
+    "variant_id": "20",
+    "product_id": "10",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "21",
+    "product_id": "11",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "22",
+    "product_id": "11",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "27",
+    "product_id": "14",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "28",
+    "product_id": "14",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "31",
+    "product_id": "16",
+    "stock_quantity": 95
+  },
+  {
+    "variant_id": "32",
+    "product_id": "16",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "35",
+    "product_id": "18",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "36",
+    "product_id": "18",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "39",
+    "product_id": "20",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "40",
+    "product_id": "20",
+    "stock_quantity": 100
+  }
+]

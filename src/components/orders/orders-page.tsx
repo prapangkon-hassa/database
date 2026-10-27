@@ -1,34 +1,35 @@
 "use client";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
-import { getOrders } from "@/services/orders.service";
+import { get_orders } from "@/services/orders.service";
 import Link from "next/link";
 import { useState } from "react";
 import { OrderCard } from "./order-card";
 
 export function OrdersPage() {
   const { data, ready } = useStore();
-  const [filter, setFilter] = useState("All");
-  const orders = getOrders(data).filter(
+  const [filter, set_filter] = useState("All");
+  const orders = get_orders(data).filter(
     (o) => filter === "All" || o.status === filter,
   );
   return (
     <div className="container section">
       <div className="page-heading">
-        <span className="eyebrow">FROM OUR DOOR TO YOURS</span>
+        <span className="eyebrow">ติดตามสถานะหลังสั่งซื้อ</span>
         <h1>
-          My orders<span className="heading-dot">.</span>
+          คำสั่งซื้อของฉัน<span className="heading-dot">.</span>
         </h1>
-        <p>Track your deliveries and revisit your favorite finds.</p>
+        <p>กด “ดูรายละเอียด / ติดตามพัสดุ” เพื่อดูแต่ละพัสดุ ออเดอร์จะเสร็จสมบูรณ์เมื่อส่งครบทุกชิ้น</p>
       </div>
       <div className="tabs">
-        {["All", "Processing", "Shipped", "Completed"].map((s) => (
+        {["All", "Pending", "Paid", "Processing", "Shipped", "Completed", "Cancelled"].map((s) => (
           <button
             key={s}
             className={filter === s ? "selected" : ""}
-            onClick={() => setFilter(s)}
+            aria-pressed={filter === s}
+            onClick={() => set_filter(s)}
           >
-            {s}
+            {{ All: "ทั้งหมด", Pending: "รอชำระเงิน", Paid: "ชำระเงินแล้ว", Processing: "กำลังเตรียมสินค้า", Shipped: "จัดส่งแล้ว", Completed: "สำเร็จ", Cancelled: "ยกเลิก" }[s]}
           </button>
         ))}
       </div>
@@ -37,16 +38,16 @@ export function OrdersPage() {
       ) : orders.length ? (
         <div className="space-y-5">
           {orders.map((o) => (
-            <OrderCard order={o} key={o.orderId} />
+            <OrderCard order={o} key={o.order_id} />
           ))}
         </div>
       ) : (
         <EmptyState
-          title="No orders here yet"
-          description="Your orders will appear here once you find something you love."
+          title="ยังไม่มีคำสั่งซื้อในสถานะนี้"
+          description="เลือกสถานะอื่น หรือเริ่มเลือกสินค้าเพื่อสร้างคำสั่งซื้อแรก"
         >
           <Link className="button" href="/">
-            Explore products
+            เลือกซื้อสินค้า
           </Link>
         </EmptyState>
       )}

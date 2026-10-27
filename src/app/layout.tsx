@@ -4,10 +4,10 @@ import { StoreProvider } from "@/context/store-provider";
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  icons: { icon: "/favicon.svg" },
-  title: "Form · E-Commerce & Fulfillment",
+  icons: { icon: "/shippy-logo.png" },
+  title: "Shippy · E-Commerce & Fulfillment",
   description:
-    "Thoughtfully selected everyday essentials. A frontend university project.",
+    "เลือกซื้อสินค้า ติดตามคำสั่งซื้อ และจัดการร้านค้าในระบบสาธิต",
 };
 export default function RootLayout({
   children,
@@ -15,11 +15,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="th" data-scroll-behavior="smooth">
       <body>
         <StoreProvider>
           <a href="#main" className="skip-link">
-            Skip to content
+            ข้ามไปเนื้อหา
           </a>
           <Navbar />
           <main id="main">{children}</main>

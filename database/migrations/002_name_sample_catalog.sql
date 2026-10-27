@@ -24,7 +24,7 @@ WITH labels(category_id,category_name,product_names) AS (VALUES
 )
 UPDATE categories c SET category_name=l.category_name
 FROM labels l WHERE c.category_id=l.category_id
- AND c.category_name='Category '||c.category_id;
+ AND c.category_name='category '||c.category_id;
 
 WITH labels(category_id,category_name,product_names) AS (VALUES
  (1,'เสื้อผ้า',ARRAY['เสื้อยืดคอกลม','เสื้อโปโล','เสื้อเชิ้ตแขนยาว','กางเกงขายาว','เสื้อคลุม']),
@@ -52,7 +52,7 @@ WITH labels(category_id,category_name,product_names) AS (VALUES
  row_number() OVER(PARTITION BY p.category_id ORDER BY p.product_id)-1 AS n
  FROM products p
  WHERE p.product_id BETWEEN 1 AND 500
- AND p.product_name='Product '||lpad(p.product_id::text,3,'0')
+ AND p.product_name='product '||lpad(p.product_id::text,3,'0')
  AND p.description='Sample product for Database Systems. Record '||p.product_id
 )
 UPDATE products p

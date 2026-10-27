@@ -1,34 +1,34 @@
 "use client";
-import { ProductVariant } from "@/types";
+import { product_variant } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
 
-export const blankVariant = (): ProductVariant => ({
-  variantId: "",
-  productId: "",
-  variantName: "",
+export const blank_variant = (): product_variant => ({
+  variant_id: "",
+  product_id: "",
+  variant_name: "",
   sku: "",
   status: "active",
   price: 0,
-  stockQuantity: 0,
+  stock_quantity: 0,
 });
 
 export function VariantEditor({
   variants,
-  onChange,
+  on_change,
   errors,
 }: {
-  variants: ProductVariant[];
-  onChange: (variants: ProductVariant[]) => void;
+  variants: product_variant[];
+  on_change: (variants: product_variant[]) => void;
   errors: Record<string, string>;
 }) {
-  function update(index: number, key: keyof ProductVariant, value: string) {
-    onChange(
+  function update(index: number, key: keyof product_variant, value: string) {
+    on_change(
       variants.map((v, i) =>
         i === index
           ? {
               ...v,
               [key]:
-                key === "price" || key === "stockQuantity"
+                key === "price" || key === "stock_quantity"
                   ? value === ""
                     ? NaN
                     : Number(value)
@@ -41,11 +41,11 @@ export function VariantEditor({
   return (
     <section className="variant-editor">
       <div className="row between">
-        <h3>Product variants</h3>
+        <h3>product variants</h3>
         <button
           type="button"
           className="text-link"
-          onClick={() => onChange([...variants, blankVariant()])}
+          onClick={() => on_change([...variants, blank_variant()])}
         >
           <Plus size={15} /> Add variant
         </button>
@@ -61,7 +61,7 @@ export function VariantEditor({
               type="button"
               className="icon-button"
               aria-label={"Remove variant " + (index + 1)}
-              onClick={() => onChange(variants.filter((_, i) => i !== index))}
+              onClick={() => on_change(variants.filter((_, i) => i !== index))}
             >
               <Trash2 size={15} />
             </button>
@@ -79,13 +79,13 @@ export function VariantEditor({
           <div className="form-grid">
             {(
               [
-                { key: "variantName", label: "Variant name" },
+                { key: "variant_name", label: "Variant name" },
                 { key: "sku", label: "SKU" },
                 { key: "price", label: "Price (THB)" },
-                { key: "stockQuantity", label: "Stock quantity" },
-              ] as { key: keyof ProductVariant; label: string }[]
+                { key: "stock_quantity", label: "Stock quantity" },
+              ] as { key: keyof product_variant; label: string }[]
             ).map((f) => {
-              const numeric = f.key === "price" || f.key === "stockQuantity";
+              const numeric = f.key === "price" || f.key === "stock_quantity";
               const error = errors[index + "-" + f.key];
               return (
                 <label key={f.key} className="field">

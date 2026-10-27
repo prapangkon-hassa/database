@@ -9,22 +9,22 @@ DECLARE r record; locked_variant record; subtotal numeric(12,2) := 0;
  discount numeric(12,2) := 0; shipping numeric(12,2); merchant_count integer;
 BEGIN
  IF NOT EXISTS (SELECT 1 FROM customers WHERE customer_id=p_customer AND status='active') THEN
-  RAISE EXCEPTION 'Customer not active'; END IF;
+  RAISE EXCEPTION 'customer not active'; END IF;
  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) NOT BETWEEN 1 AND 100 THEN
   RAISE EXCEPTION 'Cart must contain 1 to 100 items'; END IF;
  IF nullif(btrim(p_name),'') IS NULL OR nullif(btrim(p_phone),'') IS NULL OR nullif(btrim(p_address),'') IS NULL THEN
   RAISE EXCEPTION 'Shipping name, phone and address are required'; END IF;
- IF p_method IS NULL OR p_method NOT IN ('QR Payment','Credit/Debit Card','Cash on Delivery') THEN
+ IF p_method IS NULL OR p_method NOT IN ('QR payment','Credit/Debit Card','Cash on Delivery') THEN
   RAISE EXCEPTION 'Invalid payment method'; END IF;
- IF EXISTS (SELECT 1 FROM jsonb_to_recordset(p_items) AS x("variantId" bigint,quantity integer)
-  WHERE "variantId" IS NULL OR quantity IS NULL OR quantity NOT BETWEEN 1 AND 10000)
-  OR (SELECT count(*) <> count(DISTINCT "variantId") FROM jsonb_to_recordset(p_items) AS x("variantId" bigint)) THEN
+ IF EXISTS (SELECT 1 FROM jsonb_to_recordset(p_items) AS x("variant_id" bigint,quantity integer)
+  WHERE "variant_id" IS NULL OR quantity IS NULL OR quantity NOT BETWEEN 1 AND 10000)
+  OR (SELECT count(*) <> count(DISTINCT "variant_id") FROM jsonb_to_recordset(p_items) AS x("variant_id" bigint)) THEN
   RAISE EXCEPTION 'Invalid quantities or duplicate variants'; END IF;
  -- Lock variants in a deterministic order so simultaneous purchases cannot oversell.
- FOR r IN SELECT * FROM jsonb_to_recordset(p_items) AS x("variantId" bigint,quantity integer) ORDER BY "variantId" LOOP
+ FOR r IN SELECT * FROM jsonb_to_recordset(p_items) AS x("variant_id" bigint,quantity integer) ORDER BY "variant_id" LOOP
   SELECT pv.* INTO locked_variant FROM product_variants pv JOIN products p USING(product_id)
    JOIN merchants m USING(merchant_id) JOIN categories c USING(category_id)
-   WHERE pv.variant_id=r."variantId" AND pv.status='active' AND p.status='active' AND m.status='active' AND c.is_active
+   WHERE pv.variant_id=r."variant_id" AND pv.status='active' AND p.status='active' AND m.status='active' AND c.is_active
    FOR UPDATE OF pv;
   IF NOT FOUND THEN RAISE EXCEPTION 'Variant is unavailable'; END IF;
   IF locked_variant.stock_quantity < r.quantity THEN RAISE EXCEPTION 'Insufficient stock for SKU %',locked_variant.sku; END IF;
@@ -42,8 +42,8 @@ BEGIN
   RETURNING order_id INTO p_order_id;
  INSERT INTO order_items(order_id,variant_id,quantity,unit_price)
   SELECT p_order_id,v.variant_id,x.quantity,v.price
-  FROM jsonb_to_recordset(p_items) AS x("variantId" bigint,quantity integer)
-  JOIN product_variants v ON v.variant_id=x."variantId";
+  FROM jsonb_to_recordset(p_items) AS x("variant_id" bigint,quantity integer)
+  JOIN product_variants v ON v.variant_id=x."variant_id";
  UPDATE product_variants v SET stock_quantity=v.stock_quantity-i.quantity
   FROM order_items i WHERE i.order_id=p_order_id AND i.variant_id=v.variant_id;
  SELECT count(DISTINCT p.merchant_id) INTO merchant_count FROM order_items i

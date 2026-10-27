@@ -9,12 +9,12 @@ export default function Reports() {
   const gross = rows.reduce((n, r) => n + Number(r.gross_sales), 0);
   const shipping = rows.reduce((n, r) => n + Number(r.shipping_fees), 0);
   const orders = data.orders.filter((o) => o.status !== "Cancelled");
-  const discount = orders.reduce((n, o) => n + o.discountAmount, 0);
+  const discount = orders.reduce((n, o) => n + o.discount_amount, 0);
   return (
     <div className="section merchant-section">
       <div className="page-heading">
         <span className="eyebrow">SALES REPORT</span>
-        <h1>Merchant sales summary</h1>
+        <h1>merchant sales summary</h1>
         <p>All non-cancelled orders · refreshed from database</p>
       </div>
       <div className="panel form-section">
@@ -31,7 +31,7 @@ export default function Reports() {
           <b>{money(shipping)}</b>
         </div>
         <div className="summary-total">
-          <span>Order value (includes unpaid COD)</span>
+          <span>order value (includes unpaid COD)</span>
           <b>{money(gross - discount + shipping)}</b>
         </div>
         <p>{orders.length} orders</p>
@@ -40,8 +40,8 @@ export default function Reports() {
         <table>
           <thead>
             <tr>
-              <th>Merchant</th>
-              <th>Category</th>
+              <th>merchant</th>
+              <th>category</th>
               <th>Orders</th>
               <th>Units</th>
               <th>Gross sales</th>

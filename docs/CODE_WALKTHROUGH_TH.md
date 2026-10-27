@@ -2,7 +2,7 @@
 
 อ้างอิงไฟล์ที่ตรวจวันที่ 13 ตุลาคม 2026 คู่มือนี้อธิบายระบบที่มีอยู่ ไม่ได้เพิ่มฟังก์ชันหรือเปลี่ยนข้อมูลจริง ตัวอย่างที่ระบุว่า “แบบย่อ” ใช้เพื่อเรียนรู้ ไม่ใช่โค้ดเต็มสำหรับแทนไฟล์เดิม
 
-อ่านเรียงบท 1–5 เพื่อเข้าใจภาพรวม แล้วเปิดไฟล์ตามบท 6–12 เพื่อไล่โค้ด ใช้ Ctrl+P ใน VS Code แล้ววางเส้นทางไฟล์ เช่น `backend/src/lib/db.ts` ใช้ Ctrl+Shift+F ค้นชื่อฟังก์ชัน เช่น `saveProduct` เพื่อดูว่าใครเรียกใคร
+อ่านเรียงบท 1–5 เพื่อเข้าใจภาพรวม แล้วเปิดไฟล์ตามบท 6–12 เพื่อไล่โค้ด ใช้ Ctrl+P ใน VS Code แล้ววางเส้นทางไฟล์ เช่น `backend/src/lib/db.ts` ใช้ Ctrl+Shift+F ค้นชื่อฟังก์ชัน เช่น `save_product` เพื่อดูว่าใครเรียกใคร
 
 ## 1. ระบบนี้มีอะไรบ้าง
 
@@ -105,14 +105,14 @@ CRUD ย่อจาก Create เพิ่ม, Read อ่าน, Update แก
 |---|---|---|---|---|
 | อ่านข้อมูลรวม | ทุกหน้าที่ useStore | refresh | GET /api/store | store.service.ts → SELECT |
 | อ่านสินค้าแยก | endpoint สำหรับสินค้า | หน้าเว็บปัจจุบันอ่านจาก snapshot รวมเป็นหลัก | GET /api/products และ /api/products/:id | products.controller.ts → products.service.ts → products.query.ts |
-| เพิ่มสินค้า | merchant/product-form.tsx | saveProduct ไม่มี id | POST /api/products | product-write.service.ts → INSERT products และ variants |
-| แก้สินค้า/สต็อก | product-form.tsx + variant-editor.tsx | saveProduct มี id | PUT /api/products/:id | product-write.service.ts → UPDATE และจัดการ variants |
-| ลบสินค้า | merchant-products.tsx | deleteProduct | DELETE /api/products/:id | product-write.service.ts → DELETE |
+| เพิ่มสินค้า | merchant/product-form.tsx | save_product ไม่มี id | POST /api/products | product-write.service.ts → INSERT products และ variants |
+| แก้สินค้า/สต็อก | product-form.tsx + variant-editor.tsx | save_product มี id | PUT /api/products/:id | product-write.service.ts → UPDATE และจัดการ variants |
+| ลบสินค้า | merchant-products.tsx | delete_product | DELETE /api/products/:id | product-write.service.ts → DELETE |
 | สั่งซื้อ | checkout/checkout-page.tsx | checkout | POST /api/orders/checkout | checkout.service.ts → CALL procedure |
-| เปลี่ยนสถานะพัสดุ | shipments/shipment-actions.tsx | updateShipment | PATCH /api/shipments/:id | shipments.service.ts → UPDATE → Trigger |
-| เพิ่มรีวิว | reviews/review-form.tsx | saveReview ไม่มี id | POST /api/reviews | reviews.service.ts → INSERT |
-| แก้รีวิว | review-form.tsx | saveReview มี id | PUT /api/reviews/:id | reviews.service.ts → UPDATE |
-| ลบรีวิว | orders/order-detail.tsx | deleteReview | DELETE /api/reviews/:id | reviews.service.ts → DELETE |
+| เปลี่ยนสถานะพัสดุ | shipments/shipment-actions.tsx | update_shipment | PATCH /api/shipments/:id | shipments.service.ts → UPDATE → Trigger |
+| เพิ่มรีวิว | reviews/review-form.tsx | save_review ไม่มี id | POST /api/reviews | reviews.service.ts → INSERT |
+| แก้รีวิว | review-form.tsx | save_review มี id | PUT /api/reviews/:id | reviews.service.ts → UPDATE |
+| ลบรีวิว | orders/order-detail.tsx | delete_review | DELETE /api/reviews/:id | reviews.service.ts → DELETE |
 | ดูรายงาน | merchant/reports.tsx | data.report | รวมมากับ GET /api/store | SELECT จาก vw_merchant_sales_summary |
 
 **ไม่ได้มี CRUD ครบทุกตารางผ่านเว็บ** ร้าน หมวด และลูกค้ายังไม่มีหน้าบริหารเพิ่ม/แก้/ลบของตนเอง การมีตารางหรือ type ไม่ได้แปลว่ามีฟังก์ชันนั้นแล้ว และไม่มี API ยกเลิกออเดอร์/คืนเงินใน routes ปัจจุบัน แม้ schema รองรับชื่อสถานะ cancelled/refunded
@@ -126,13 +126,13 @@ CRUD ย่อจาก Create เพิ่ม, Read อ่าน, Update แก
 3. StoreProvider เริ่ม `useEffect` แล้วเรียก `refresh()`
 4. `refresh()` เรียก `api('/store')`
 5. `src/services/api.ts` ประกอบ URL เป็น `http://localhost:4000/api/store` ตามค่าเริ่มต้น
-6. Express ใน `backend/src/app.ts` ส่งต่อ `/api` ให้ storeRouter
-7. `backend/src/routes/store.routes.ts` จับ GET `/store` และเรียก `getStore()`
+6. Express ใน `backend/src/app.ts` ส่งต่อ `/api` ให้ store_router
+7. `backend/src/routes/store.routes.ts` จับ GET `/store` และเรียก `get_store()`
 8. `backend/src/services/store.service.ts` SELECT ตารางจริงและ View ภายใน read-only transaction
-9. Backend ส่ง JSON กลับ Context เรียก `setData()`
+9. Backend ส่ง JSON กลับ Context เรียก `set_data()`
 10. Catalog รับ `data.products`, `categories`, `merchants` แล้วกรองรายการ ส่งให้ ProductGrid → ProductCard
 
-หน้า Product Detail รับ id จาก URL แล้วค้นสินค้าในข้อมูลร่วม ไม่ได้สร้างสต็อกอีกชุดหนึ่งเอง
+หน้า product Detail รับ id จาก URL แล้วค้นสินค้าในข้อมูลร่วม ไม่ได้สร้างสต็อกอีกชุดหนึ่งเอง
 
 StoreProvider โหลดใหม่หลังเขียนข้อมูลและทุกประมาณ 5 วินาที รวมถึงตอนหน้าต่างกลับมาโฟกัส จึงเป็น polling ไม่ใช่ WebSocket และการเปลี่ยนจาก pgAdmin ไม่จำเป็นต้องปรากฏทันทีในเสี้ยววินาที
 
@@ -172,7 +172,7 @@ StoreProvider โหลดใหม่หลังเขียนข้อมู
 | products/product-grid.tsx | รับ products ผ่าน props แล้ว map เป็น ProductCard |
 | products/product-card.tsx | รับ product แล้วหาชื่อร้าน หมวด variants และ reviews ที่เกี่ยวข้อง; แสดงราคาเริ่มต้นและสต็อก |
 | products/product-detail.tsx | รับ product id; รายละเอียด เลือก variant จำนวน ตะกร้า ซื้อ และรีวิว |
-| cart/use-cart-lines.ts | จับคู่ variantId ในตะกร้ากับ product/variant เพื่อสร้างรายการแสดงผล |
+| cart/use-cart-lines.ts | จับคู่ variant_id ในตะกร้ากับ product/variant เพื่อสร้างรายการแสดงผล |
 | cart/cart-page.tsx | แสดงตะกร้า เปลี่ยนจำนวน ลบรายการ และไป checkout |
 | cart/order-summary.tsx | ส่วนสรุปยอด รับตัวเลขที่คำนวณมาแล้วเพื่อแสดงผล |
 | checkout/checkout-page.tsx | ฟอร์มชื่อ โทรศัพท์ ที่อยู่ วิธีชำระเงิน คูปอง; เรียก checkout แล้วแสดงผลสำเร็จ |
@@ -181,13 +181,13 @@ StoreProvider โหลดใหม่หลังเขียนข้อมู
 | orders/order-detail.tsx | รายการซื้อ การชำระเงิน ที่อยู่ พัสดุ และการจัดการรีวิว |
 | orders/order-status-timeline.tsx | แสดงขั้นตอนออเดอร์จากข้อมูลที่ได้รับ; ตัวมันเองไม่ UPDATE SQL |
 | merchant/merchant-products.tsx | ตารางสินค้า ตัวกรองทุกร้าน/ร้านเดียว สรุปจำนวน และเปิดฟอร์มเพิ่ม/แก้/ลบ |
-| merchant/product-form.tsx | state ของฟอร์ม ตรวจชื่อ/หมวด/ร้าน/variants แล้วเรียก saveProduct |
+| merchant/product-form.tsx | state ของฟอร์ม ตรวจชื่อ/หมวด/ร้าน/variants แล้วเรียก save_product |
 | merchant/variant-editor.tsx | ช่อง SKU ชื่อตัวเลือก ราคา สต็อก สถานะ และเพิ่ม/เอาตัวเลือกออกจากฟอร์ม |
 | merchant/metric-card.tsx | การ์ดตัวเลขสรุป รับ label/value/icon ผ่าน props |
 | merchant/merchant-orders.tsx | รายการออเดอร์ทุกร้านหรือเฉพาะร้าน รายละเอียดและพัสดุแต่ละร้าน |
 | merchant/reports.tsx | อ่าน data.report จาก View; แสดงยอดขาย ค่าส่ง และสินค้าขายดี |
-| shipments/shipment-actions.tsx | ปุ่มเลื่อนสถานะพัสดุ ช่องขนส่ง/เลขติดตาม ส่ง updateShipment |
-| reviews/review-form.tsx | ฟอร์มดาวและข้อความรีวิว เรียก saveReview |
+| shipments/shipment-actions.tsx | ปุ่มเลื่อนสถานะพัสดุ ช่องขนส่ง/เลขติดตาม ส่ง update_shipment |
+| reviews/review-form.tsx | ฟอร์มดาวและข้อความรีวิว เรียก save_review |
 | ui/dialog.tsx | Modal และ ConfirmDialog ใช้ซ้ำในหลายหน้า |
 | ui/display.tsx | ส่วนแสดงผลร่วม เช่น ดาวรีวิวและป้ายสถานะ |
 | ui/feedback.tsx | หน้าว่างและ skeleton ขณะโหลด |
@@ -216,29 +216,29 @@ StoreProvider โหลดใหม่หลังเขียนข้อมู
 - `pending`: กันคำสั่งเขียนซ้อนกันจาก Context นี้ ไม่ใช่ lock ฐานข้อมูล
 - `generation`: กันผลอ่านเก่าที่กลับมาช้าทับข้อมูลรุ่นใหม่
 - `ref.current`: ค่าล่าสุดที่ callback อ่านได้โดยไม่ติดค่า state เก่า
-- `saveCart`: อัปเดต state และบันทึก localStorage key `ef-api-cart-v1`
+- `save_cart`: อัปเดต state และบันทึก localStorage key `ef-api-cart-v1`
 
-localStorage เก็บเฉพาะรายการ `{ variantId, quantity }` ในตะกร้า สต็อก สินค้า ออเดอร์ และรายงานไม่ได้เก็บเป็นฐานสำรองอิสระใน localStorage
+localStorage เก็บเฉพาะรายการ `{ variant_id, quantity }` ในตะกร้า สต็อก สินค้า ออเดอร์ และรายงานไม่ได้เก็บเป็นฐานสำรองอิสระใน localStorage
 
 ไฟล์ใต้ `src/types/` เป็นคำอธิบายรูปร่างข้อมูลสำหรับ TypeScript ไม่สร้างตารางและไม่ validate request จากผู้ใช้โดยอัตโนมัติ:
 
 | ไฟล์ | รูปร่างที่กำหนด |
 |---|---|
-| product.ts | Product, ProductVariant, ProductInput สำหรับฟอร์ม |
-| category.ts | Category |
-| merchant.ts | Merchant |
-| customer.ts | Customer ที่ส่งให้เว็บ ไม่มี password_hash |
-| order.ts | Order, OrderItem, OrderRecord ที่รวมรายการ พัสดุ และ payments |
-| payment.ts | วิธีจ่าย สถานะและข้อมูล Payment |
-| shipment.ts | Shipment และสถานะพัสดุ |
-| review.ts | Review |
-| cart.ts | CartItem ใน browser |
-| checkout.ts | Address และ CheckoutInput |
-| store.ts | StoreData รวมทุกชุด และ SalesRow สำหรับผล View ที่หน้า Reports ใช้จริง |
-| report.ts | MerchantReport อีกรูปแบบที่ประกาศไว้; หน้า Reports ปัจจุบันใช้ SalesRow ใน store.ts ไม่ได้ใช้ type นี้ |
+| product.ts | product, product_variant, product_input สำหรับฟอร์ม |
+| category.ts | category |
+| merchant.ts | merchant |
+| customer.ts | customer ที่ส่งให้เว็บ ไม่มี password_hash |
+| order.ts | order, order_item, order_record ที่รวมรายการ พัสดุ และ payments |
+| payment.ts | วิธีจ่าย สถานะและข้อมูล payment |
+| shipment.ts | shipment และสถานะพัสดุ |
+| review.ts | review |
+| cart.ts | cart_item ใน browser |
+| checkout.ts | address และ checkout_input |
+| store.ts | store_data รวมทุกชุด และ sales_row สำหรับผล View ที่หน้า Reports ใช้จริง |
+| report.ts | merchant_report อีกรูปแบบที่ประกาศไว้; หน้า Reports ปัจจุบันใช้ sales_row ใน store.ts ไม่ได้ใช้ type นี้ |
 | index.ts | รวม export type เพื่อ import จาก @/types ได้ |
 
-ชื่อสถานะใน type เป็นชุดค่าที่โค้ดยอมรับ ไม่ได้พิสูจน์ว่ามีปุ่ม/endpoint ทำทุกสถานะ เช่น OrderStatus มี Delivered แต่ orders ใน SQL ใช้ completed หลังส่งครบ ส่วน delivered อยู่ใน shipments
+ชื่อสถานะใน type เป็นชุดค่าที่โค้ดยอมรับ ไม่ได้พิสูจน์ว่ามีปุ่ม/endpoint ทำทุกสถานะ เช่น order_status มี Delivered แต่ orders ใน SQL ใช้ completed หลังส่งครบ ส่วน delivered อยู่ใน shipments
 
 ## 8. Backend แต่ละไฟล์
 
@@ -247,15 +247,15 @@ localStorage เก็บเฉพาะรายการ `{ variantId, quantit
 | src/server.ts | อ่าน PORT เริ่มฟัง 127.0.0.1:4000 และปิด server/pool เมื่อหยุดโปรแกรม |
 | src/app.ts | สร้าง Express app, CORS, อ่าน JSON จำกัด 100kb, routes, health check และ error handler |
 | src/routes/products.routes.ts | GET / และ /:id ภายใต้ /api/products |
-| src/controllers/products.controller.ts | รับ req.params.id ตรวจ id เรียก getInventory แล้วส่ง JSON/404 |
+| src/controllers/products.controller.ts | รับ req.params.id ตรวจ id เรียก get_inventory แล้วส่ง JSON/404 |
 | src/queries/products.query.ts | SQL SELECT products LEFT JOIN variants พร้อม alias |
-| src/services/products.service.ts | รัน inventoryQuery; แยกแถว JOIN เป็น products ไม่ซ้ำและ variants |
+| src/services/products.service.ts | รัน inventory_query; แยกแถว JOIN เป็น products ไม่ซ้ำและ variants |
 | src/routes/store.routes.ts | จับ URL ข้อมูลรวมและคำสั่งเขียน แล้วส่งให้ services |
 | src/services/store.service.ts | อ่านข้อมูลรวมและ View; JOIN รายการซื้อ; ประกอบ items/payments/shipments เข้าแต่ละ order |
 | src/services/product-write.service.ts | validate สินค้า/variants; INSERT/UPDATE/DELETE ภายใน transaction; ตรวจสต็อกเปลี่ยนระหว่างแก้ |
-| src/services/checkout.service.ts | validate ที่อยู่/วิธีจ่าย/รายการ แล้ว CALL sp_checkout_order; ใช้ customerId=1 |
+| src/services/checkout.service.ts | validate ที่อยู่/วิธีจ่าย/รายการ แล้ว CALL sp_checkout_order; ใช้ customer_id=1 |
 | src/services/shipments.service.ts | ตรวจออเดอร์เปิดอยู่และเลื่อนสถานะได้ทีละขั้น แล้ว UPDATE |
-| src/services/reviews.service.ts | ตรวจซื้อและ completed ก่อนรีวิว; เพิ่ม/แก้/ลบสำหรับ customerId=1 |
+| src/services/reviews.service.ts | ตรวจซื้อและ completed ก่อนรีวิว; เพิ่ม/แก้/ลบสำหรับ customer_id=1 |
 | src/lib/db.ts | อ่าน DATABASE_URL สร้าง pg Pool ร่วม max 10 connections |
 | src/lib/transaction.ts | ยืม client เดียว BEGIN → action → COMMIT; error → ROLLBACK; release เสมอ |
 | src/lib/validation.ts | id/text/number ตรวจข้อมูล; fail สร้าง error พร้อม HTTP status |
@@ -273,9 +273,9 @@ Express Router เหมือนจุดจับคู่ “วิธี HTT
 ตัวอย่างจาก `products.query.ts` ย่อบางคอลัมน์:
 
 ```sql
-SELECT p.product_id::text AS "productId",
+SELECT p.product_id::text AS "product_id",
        p.product_name AS name,
-       v.stock_quantity AS "stockQuantity"
+       v.stock_quantity AS "stock_quantity"
 FROM products p
 LEFT JOIN product_variants v USING(product_id)
 WHERE ($1::bigint IS NULL OR p.product_id=$1::bigint)
@@ -285,7 +285,7 @@ ORDER BY p.product_id,v.variant_id;
 - `p` และ `v` คือชื่อย่อของตาราง
 - `SELECT` เลือกช่องที่จะส่งกลับ
 - `::text` แปลง ID เป็นข้อความ; bigint อาจใหญ่เกินช่วงจำนวนเต็มที่ JavaScript เก็บแม่นยำ
-- `AS "productId"` เปลี่ยนชื่อช่องผลลัพธ์ ไม่เปลี่ยนชื่อคอลัมน์จริง
+- `AS "product_id"` เปลี่ยนชื่อช่องผลลัพธ์ ไม่เปลี่ยนชื่อคอลัมน์จริง
 - `LEFT JOIN` เก็บสินค้าฝั่งซ้ายไว้แม้ไม่มี variant
 - `USING(product_id)` จับคู่คอลัมน์ชื่อเดียวกัน
 - `$1` รับค่าจาก array argument ของ query ไม่ใช่การต่อข้อความจากผู้ใช้
@@ -301,12 +301,12 @@ ORDER BY p.product_id,v.variant_id;
 ตัวอย่างจริงรูปแบบใน `product-form.tsx`:
 
 ```tsx
-const { data, saveProduct } = useStore();
-const [busy, setBusy] = useState(false);
+const { data, save_product } = useStore();
+const [busy, set_busy] = useState(false);
 
 <input
   value={form.name}
-  onChange={(e) => setForm({ ...form, name: e.target.value })}
+  onChange={(e) => set_form({ ...form, name: e.target.value })}
 />
 ```
 
@@ -317,10 +317,10 @@ const [busy, setBusy] = useState(false);
 `submit(e)` เรียก `e.preventDefault()` เพื่อไม่ให้ browser submit แบบ reload ทั้งหน้า จากนั้นตรวจชื่อ ร้าน หมวด ราคา SKU และสต็อก ถ้าผิดใส่ `errors` แล้วหยุด ถ้าถูกตั้ง busy แล้ว:
 
 ```tsx
-await saveProduct({ ...form, name: form.name.trim() }, product?.productId);
+await save_product({ ...form, name: form.name.trim() }, product?.product_id);
 ```
 
-`trim()` ตัดช่องว่างหัวท้าย; `product?.productId` มีค่าเมื่อแก้สินค้าเดิม ถ้าสร้างใหม่เป็น undefined; `await` รอสำเร็จก่อนปิดฟอร์ม; catch แสดง error; finally ปลด busy
+`trim()` ตัดช่องว่างหัวท้าย; `product?.product_id` มีค่าเมื่อแก้สินค้าเดิม ถ้าสร้างใหม่เป็น undefined; `await` รอสำเร็จก่อนปิดฟอร์ม; catch แสดง error; finally ปลด busy
 
 ### 9.3 Context เลือก HTTP method
 
@@ -353,12 +353,12 @@ const response = await fetch(base + path, {
 ### 9.5 Express รับคำขอ
 
 ```ts
-storeRouter.post("/products", async (req, res) => {
-  res.status(201).json(await productWrites.saveProduct(req.body));
+store_router.post("/products", async (req, res) => {
+  res.status(201).json(await product_writes.save_product(req.body));
 });
 ```
 
-`req.body` มาจาก JSON ที่ express.json แปลงให้; `201` หมายถึงสร้างสำเร็จ; `res.json` ส่งคำตอบกลับ ฟังก์ชันชื่อ saveProduct ใน backend เป็นคนละฟังก์ชันกับชื่อเดียวกันใน Context
+`req.body` มาจาก JSON ที่ express.json แปลงให้; `201` หมายถึงสร้างสำเร็จ; `res.json` ส่งคำตอบกลับ ฟังก์ชันชื่อ save_product ใน backend เป็นคนละฟังก์ชันกับชื่อเดียวกันใน Context
 
 ### 9.6 เขียนฐานข้อมูล
 
@@ -385,13 +385,13 @@ WHERE variant_id=$1 AND product_id=$2 AND stock_quantity=$8
 RETURNING variant_id
 ```
 
-`$8` มาจาก originalStockQuantity ที่ฟอร์มจำตอนเปิด ถ้ามีคนซื้อระหว่างแก้ สต็อกจริงจะไม่เท่าเดิมและ UPDATE ไม่พบแถว API แจ้ง 409 เพื่อให้เปิดฟอร์มใหม่ ป้องกันเอาสต็อกเก่าทับยอดที่เพิ่งถูกซื้อ originalStockQuantity เป็นค่าคำขอ ไม่ใช่คอลัมน์ฐานข้อมูล
+`$8` มาจาก original_stock_quantity ที่ฟอร์มจำตอนเปิด ถ้ามีคนซื้อระหว่างแก้ สต็อกจริงจะไม่เท่าเดิมและ UPDATE ไม่พบแถว API แจ้ง 409 เพื่อให้เปิดฟอร์มใหม่ ป้องกันเอาสต็อกเก่าทับยอดที่เพิ่งถูกซื้อ original_stock_quantity เป็นค่าคำขอ ไม่ใช่คอลัมน์ฐานข้อมูล
 
 `DELETE FROM products WHERE product_id=$1` ลบเฉพาะสินค้านั้น แต่ต้องผ่าน FK; ต่างจาก `DELETE` ไม่มี WHERE ที่จะกระทบทุกแถว
 
 Checkout มีลำดับ:
 
-1. เว็บส่งที่อยู่ วิธีจ่าย couponCode และตะกร้า variantId/quantity
+1. เว็บส่งที่อยู่ วิธีจ่าย coupon_code และตะกร้า variant_id/quantity
 2. API ตรวจ request และกำหนดลูกค้าทดสอบหมายเลข 1
 3. transaction.ts สั่ง BEGIN
 4. checkout.service.ts เรียก `CALL sp_checkout_order(...)`
@@ -530,10 +530,10 @@ Migration เป็นคำสั่งเปลี่ยนฐานที่�
 ตัวอย่างจริงจาก inventory:
 
 ```ts
-variants.some((v) => v.status === "active" && v.stockQuantity > 0)
+variants.some((v) => v.status === "active" && v.stock_quantity > 0)
 ```
 
-แปลว่า “มีอย่างน้อยหนึ่งตัวเลือกที่เปิดขายและสต็อกมากกว่า 0 หรือไม่” ถ้ามีให้แสดง In Stock หากทุกตัวหมดหรือ inactive จะไม่พร้อมขาย ส่วน totalStock ใน helper รวมทุก variant จึงอาจต่างจากสต็อกที่ขายได้เมื่อมีตัว inactive
+แปลว่า “มีอย่างน้อยหนึ่งตัวเลือกที่เปิดขายและสต็อกมากกว่า 0 หรือไม่” ถ้ามีให้แสดง In Stock หากทุกตัวหมดหรือ inactive จะไม่พร้อมขาย ส่วน total_stock ใน helper รวมทุก variant จึงอาจต่างจากสต็อกที่ขายได้เมื่อมีตัว inactive
 
 ตัวอย่างฟังก์ชัน `money(value)` ใน utils ใช้ Intl.NumberFormat จัดรูปเลขเป็น THB เปลี่ยนแค่ข้อความแสดงผล ไม่แก้ราคาฐานข้อมูล
 
@@ -606,13 +606,13 @@ ORDER BY p.product_id,v.variant_id
 LIMIT 20;
 ```
 
-3. เปิดเว็บ F12 → Network → เลือก request `store` → Response หา productId เดียวกัน
+3. เปิดเว็บ F12 → Network → เลือก request `store` → Response หา product_id เดียวกัน
 4. เปิด products.query.ts ดูว่า product_name แปลงเป็น name อย่างไร
 5. เปิด product-card.tsx หา `{product.name}` เห็นปลายทางแสดงค่าจากข้อ 2
 
 ### รอบ B: ตามการเขียน
 
-ในฐานฝึกหรือใช้สินค้าใหม่ที่ตั้งชื่อชัดว่าเป็นรายการฝึก เปิด Merchant Products → Add product → กรอก variant และ SKU ไม่ซ้ำ ดู Network ว่าเป็น POST /api/products แล้วตรวจแถวใหม่ใน pgAdmin
+ในฐานฝึกหรือใช้สินค้าใหม่ที่ตั้งชื่อชัดว่าเป็นรายการฝึก เปิด merchant Products → Add product → กรอก variant และ SKU ไม่ซ้ำ ดู Network ว่าเป็น POST /api/products แล้วตรวจแถวใหม่ใน pgAdmin
 
 แก้ราคาเดิม ดูคำขอ PUT และตรวจว่า product_id เดิมยังอยู่ จากนั้นลบเฉพาะสินค้าฝึกที่ยังไม่เคยขาย ดู DELETE และการตอบ 204 อย่าใช้สินค้าที่เป็นประวัติส่งงานมาทดลองลบ
 

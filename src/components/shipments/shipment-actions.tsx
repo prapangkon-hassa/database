@@ -2,35 +2,35 @@
 import { useState } from "react";
 import { Truck } from "lucide-react";
 import { useStore } from "@/context/store-provider";
-import type { Shipment } from "@/types/shipment";
+import type { shipment } from "@/types/shipment";
 
-export function ShipmentActions({ shipment }: { shipment: Shipment }) {
-  const { updateShipment } = useStore();
-  const [carrier, setCarrier] = useState(shipment.carrier);
-  const [tracking, setTracking] = useState(shipment.trackingNumber);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  async function change(status: Shipment["shippingStatus"]) {
-    setBusy(true);
-    setErrors({});
+export function ShipmentActions({ shipment }: { shipment: shipment }) {
+  const { update_shipment } = useStore();
+  const [carrier, set_carrier] = useState(shipment.carrier);
+  const [tracking, set_tracking] = useState(shipment.tracking_number);
+  const [errors, set_errors] = useState<Record<string, string>>({});
+  const [busy, set_busy] = useState(false);
+  async function change(status: shipment["shipping_status"]) {
+    set_busy(true);
+    set_errors({});
     try {
-      await updateShipment(
-        shipment.shipmentId,
+      await update_shipment(
+        shipment.shipment_id,
         status,
         carrier.trim(),
         tracking.trim(),
       );
     } catch (e) {
-      setErrors({ submit: (e as Error).message });
+      set_errors({ submit: (e as Error).message });
     } finally {
-      setBusy(false);
+      set_busy(false);
     }
   }
   async function ship() {
     const next: Record<string, string> = {};
     if (!carrier.trim()) next.carrier = "Carrier is required.";
     if (!tracking.trim()) next.tracking = "Tracking number is required.";
-    setErrors(next);
+    set_errors(next);
     if (Object.keys(next).length) return;
     await change("Shipped");
   }
@@ -40,14 +40,14 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
         <Truck size={18} /> Update shipment
       </h3>
       <p className="muted text-sm my-3">
-        Shipment status and order status are tracked separately.
+        shipment status and order status are tracked separately.
       </p>
       {errors.submit && (
         <p role="alert" className="field-error">
           {errors.submit}
         </p>
       )}
-      {shipment.shippingStatus === "Pending" && (
+      {shipment.shipping_status === "Pending" && (
         <button
           className="button"
           disabled={busy}
@@ -56,7 +56,7 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
           Mark as processing
         </button>
       )}
-      {shipment.shippingStatus === "Processing" && (
+      {shipment.shipping_status === "Processing" && (
         <>
           <div className="form-grid my-5">
             <label className="field">
@@ -64,7 +64,7 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
               <input
                 aria-label="Carrier"
                 value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
+                onChange={(e) => set_carrier(e.target.value)}
                 placeholder="e.g. Thailand Post"
                 aria-invalid={!!errors.carrier}
               />
@@ -77,7 +77,7 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
               <input
                 aria-label="Tracking number"
                 value={tracking}
-                onChange={(e) => setTracking(e.target.value)}
+                onChange={(e) => set_tracking(e.target.value)}
                 aria-invalid={!!errors.tracking}
               />
               {errors.tracking && (
@@ -90,7 +90,7 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
           </button>
         </>
       )}
-      {shipment.shippingStatus === "Shipped" && (
+      {shipment.shipping_status === "Shipped" && (
         <button
           className="button"
           disabled={busy}
@@ -99,7 +99,7 @@ export function ShipmentActions({ shipment }: { shipment: Shipment }) {
           Mark as delivered
         </button>
       )}
-      {shipment.shippingStatus === "Delivered" && (
+      {shipment.shipping_status === "Delivered" && (
         <p className="notice">
           This shipment is delivered. The order completes automatically after
           all shipments are delivered.

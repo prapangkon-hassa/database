@@ -5,7 +5,7 @@
 UPDATE products AS p
 SET category_id = ((p.product_id - 1) % 20 + (p.product_id - 1) / 20) % 20 + 1
 WHERE p.product_id BETWEEN 1 AND 500
-  AND p.product_name = 'Product ' || lpad(p.product_id::text, 3, '0')
+  AND p.product_name = 'product ' || lpad(p.product_id::text, 3, '0')
   AND p.description = 'Sample product for Database Systems. Record ' || p.product_id
   AND p.merchant_id = (p.product_id - 1) % 20 + 1
   AND p.category_id = (p.product_id - 1) % 20 + 1

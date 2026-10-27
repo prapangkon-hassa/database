@@ -56,7 +56,7 @@ CREATE TABLE order_items (
 CREATE TABLE payments (
  payment_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  order_id bigint NOT NULL REFERENCES orders ON DELETE RESTRICT,
- payment_method varchar(30) NOT NULL CHECK (payment_method IN ('QR Payment','Credit/Debit Card','Cash on Delivery')),
+ payment_method varchar(30) NOT NULL CHECK (payment_method IN ('QR payment','Credit/Debit Card','Cash on Delivery')),
  payment_status varchar(20) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending','paid','failed','refunded')),
  amount numeric(12,2) NOT NULL CHECK (amount >= 0), transaction_ref varchar(100) UNIQUE,
  paid_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(),

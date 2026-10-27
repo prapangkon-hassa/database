@@ -5,8 +5,8 @@ import { StatusBadge } from "@/components/ui/display";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
 import { money } from "@/lib/utils";
-import { getProductInventory } from "@/services/products.service";
-import { Product } from "@/types";
+import { get_product_inventory } from "@/services/products.service";
+import { product } from "@/types";
 import {
   Archive,
   Eye,
@@ -21,19 +21,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProductForm } from "./product-form";
 export default function MerchantProducts() {
-  const { data, ready, deleteProduct } = useStore();
+  const { data, ready, delete_product } = useStore();
   const { categories, merchants } = data;
-  const [merchant, setMerchant] = useState("all");
-  const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<Product | null | undefined>(undefined);
-  const [deleting, setDeleting] = useState<Product | null>(null);
-  const [view, setView] = useState<Product | null>(null);
-  const all = data.products.filter((p) => merchant === "all" || p.merchantId === merchant);
+  const [merchant, set_merchant] = useState("all");
+  const [search, set_search] = useState("");
+  const [editing, set_editing] = useState<product | null | undefined>(undefined);
+  const [deleting, set_deleting] = useState<product | null>(null);
+  const [view, set_view] = useState<product | null>(null);
+  const all = data.products.filter((p) => merchant === "all" || p.merchant_id === merchant);
   const products = all.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   );
   const variants = data.variants.filter((v) =>
-    all.some((p) => p.productId === v.productId),
+    all.some((p) => p.product_id === v.product_id),
   );
   return (
     <div className="section merchant-section">
@@ -45,7 +45,7 @@ export default function MerchantProducts() {
           </h1>
           <p>Manage your catalog, variants, and stock.</p>
         </div>
-        <button className="button" onClick={() => setEditing(null)}>
+        <button className="button" onClick={() => set_editing(null)}>
           <Plus size={17} /> Add product
         </button>
       </div>
@@ -66,7 +66,7 @@ export default function MerchantProducts() {
           label="Units in stock"
           value={
             ready
-              ? String(variants.reduce((n, v) => n + v.stockQuantity, 0))
+              ? String(variants.reduce((n, v) => n + v.stock_quantity, 0))
               : "—"
           }
           detail="Across all product variants"
@@ -78,22 +78,22 @@ export default function MerchantProducts() {
           <Search size={17} />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => set_search(e.target.value)}
             placeholder="Search your products…"
             aria-label="Search merchant products"
           />
         </label>
         <label className="filter-select">
-          Merchant
+          merchant
           <select
             value={merchant}
-            onChange={(e) => setMerchant(e.target.value)}
+            onChange={(e) => set_merchant(e.target.value)}
             aria-label="Select merchant"
           >
             <option value="all">All merchants — ทุกร้าน</option>
             {merchants.map((m) => (
-              <option key={m.merchantId} value={m.merchantId}>
-                {m.merchantName}
+              <option key={m.merchant_id} value={m.merchant_id}>
+                {m.merchant_name}
               </option>
             ))}
           </select>
@@ -111,9 +111,9 @@ export default function MerchantProducts() {
           <table>
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Merchant</th>
-                <th>Category</th>
+                <th>product</th>
+                <th>merchant</th>
+                <th>category</th>
                 <th>Variants</th>
                 <th>Price range</th>
                 <th>Stock</th>
@@ -125,21 +125,21 @@ export default function MerchantProducts() {
               {products.map((p) => {
                 const {
                   variants: vs,
-                  totalStock,
-                  inStock,
-                } = getProductInventory(data, p.productId);
+                  total_stock,
+                  in_stock,
+                } = get_product_inventory(data, p.product_id);
                 return (
-                  <tr key={p.productId}>
+                  <tr key={p.product_id}>
                     <td>
                       <div className="table-product">
                         <b>{p.name}</b>
                       </div>
                     </td>
-                    <td>{merchants.find((m) => m.merchantId === p.merchantId)?.merchantName}</td>
+                    <td>{merchants.find((m) => m.merchant_id === p.merchant_id)?.merchant_name}</td>
                     <td>
                       {
-                        categories.find((c) => c.categoryId === p.categoryId)
-                          ?.categoryName
+                        categories.find((c) => c.category_id === p.category_id)
+                          ?.category_name
                       }
                     </td>
                     <td>{vs.length} variants</td>
@@ -148,13 +148,13 @@ export default function MerchantProducts() {
                       {money(Math.max(...vs.map((v) => v.price)))}
                     </td>
                     <td>
-                      {totalStock}
+                      {total_stock}
                       <small
                         className={
-                          "stock block " + (!inStock ? "unavailable" : "")
+                          "stock block " + (!in_stock ? "unavailable" : "")
                         }
                       >
-                        {inStock ? "In Stock" : "Out of Stock"}
+                        {in_stock ? "In Stock" : "Out of Stock"}
                       </small>
                     </td>
                     <td>
@@ -165,21 +165,21 @@ export default function MerchantProducts() {
                         <button
                           className="icon-button"
                           aria-label={"View " + p.name}
-                          onClick={() => setView(p)}
+                          onClick={() => set_view(p)}
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           className="icon-button"
                           aria-label={"Edit " + p.name}
-                          onClick={() => setEditing(p)}
+                          onClick={() => set_editing(p)}
                         >
                           <Pencil size={16} />
                         </button>
                         <button
                           className="icon-button"
                           aria-label={"Delete " + p.name}
-                          onClick={() => setDeleting(p)}
+                          onClick={() => set_deleting(p)}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -198,8 +198,8 @@ export default function MerchantProducts() {
       {editing !== undefined && (
         <ProductForm
           product={editing ?? undefined}
-          merchantId={merchant === "all" ? "" : merchant}
-          onClose={() => setEditing(undefined)}
+          merchant_id={merchant === "all" ? "" : merchant}
+          on_close={() => set_editing(undefined)}
         />
       )}{" "}
       {deleting && (
@@ -210,15 +210,15 @@ export default function MerchantProducts() {
             deleting.name +
             "” will be deleted only if it has no order history. For sold products, set status to inactive."
           }
-          onClose={() => setDeleting(null)}
-          onConfirm={async () => {
-            await deleteProduct(deleting.productId);
-            setDeleting(null);
+          on_close={() => set_deleting(null)}
+          on_confirm={async () => {
+            await delete_product(deleting.product_id);
+            set_deleting(null);
           }}
         />
       )}
       {view && (
-        <Modal title={view.name} onClose={() => setView(null)}>
+        <Modal title={view.name} on_close={() => set_view(null)}>
           <p className="muted mb-5">{view.description}</p>
           <StatusBadge status={view.active ? "Active" : "Inactive"} />
           <div className="table-wrap mt-5">
@@ -233,20 +233,20 @@ export default function MerchantProducts() {
               </thead>
               <tbody>
                 {data.variants
-                  .filter((v) => v.productId === view.productId)
+                  .filter((v) => v.product_id === view.product_id)
                   .map((v) => (
-                    <tr key={v.variantId}>
-                      <td>{v.variantName}</td>
+                    <tr key={v.variant_id}>
+                      <td>{v.variant_name}</td>
                       <td>{v.sku}</td>
                       <td>{money(v.price)}</td>
-                      <td>{v.stockQuantity}</td>
+                      <td>{v.stock_quantity}</td>
                     </tr>
                   ))}
               </tbody>
             </table>
           </div>
           {view.active && (
-            <Link className="button mt-5" href={"/products/" + view.productId}>
+            <Link className="button mt-5" href={"/products/" + view.product_id}>
               View storefront page
             </Link>
           )}

@@ -1,0 +1,182 @@
+"use client";
+import { RatingStars } from "@/components/ui/display";
+import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
+import { QuantitySelector } from "@/components/ui/quantity-selector";
+import { useStore } from "@/context/store-provider";
+import { date, money } from "@/lib/utils";
+import { getProductInventory } from "@/services/products.service";
+import { ArrowLeft, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+export default function ProductDetail({ id }: { id: string }) {
+  const { data, ready, addToCart } = useStore();
+  const { categories, customers, merchants } = data;
+  const router = useRouter();
+  const [selected, setSelected] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [added, setAdded] = useState(false);
+  const p = data.products.find((p) => p.productId === id && p.active);
+  const inventory = getProductInventory(data, id);
+  const variants = inventory.variants;
+  const inStock = inventory.inStock;
+  const v =
+    variants.find((v) => v.variantId === selected) ??
+    variants.find((v) => v.status === "active" && v.stockQuantity > 0) ??
+    variants[0];
+  const reviews = data.reviews.filter((r) => r.productId === id);
+  const rating = reviews.length
+    ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
+    : 0;
+  if (!ready) return <LoadingSkeleton />;
+  if (!p || !v)
+    return (
+      <EmptyState
+        title="ไม่พบสินค้า"
+        description="สินค้านี้อาจถูกปิดการขายแล้ว กรุณาเลือกสินค้าอื่น"
+      >
+        <Link href="/" className="button">
+          เลือกซื้อสินค้า
+        </Link>
+      </EmptyState>
+    );
+  const inCart =
+    data.cart.find((c) => c.variantId === v.variantId)?.quantity ?? 0;
+  const variantAvailable = v.status === "active" && v.stockQuantity > 0;
+  const available = variantAvailable
+    ? Math.max(0, v.stockQuantity - inCart)
+    : 0;
+  const purchaseQuantity = Math.min(quantity, Math.max(1, available));
+  function add(buy = false) {
+    if (addToCart(v.variantId, purchaseQuantity)) {
+      setAdded(true);
+      if (buy) router.push("/checkout");
+    }
+  }
+  return (
+    <div className="container section">
+      <Link href="/#catalog" className="back-link">
+        <ArrowLeft size={15} /> กลับไปเลือกสินค้า
+      </Link>
+      <div className="panel form-section">
+        <div className="detail-copy">
+          <span className="eyebrow">
+            {
+              categories.find((c) => c.categoryId === p.categoryId)
+                ?.categoryName
+            }
+          </span>
+          <h1>{p.name}</h1>
+          <p className="muted">
+            ร้านค้า: {" "}
+            {merchants.find((m) => m.merchantId === p.merchantId)?.merchantName}
+          </p>
+          <div className="my-4">
+            <RatingStars rating={rating} count={reviews.length} />
+            <span className="muted text-sm ml-2">รีวิวจากผู้ซื้อ</span>
+          </div>
+          <div className="detail-price">{money(v.price)}</div>
+          <p className="description">{p.description}</p>
+          <p
+            className={"stock my-4 " + (!inStock ? "unavailable" : inventory.lowStock ? "low-stock" : "")}
+            aria-label="Product availability"
+          >
+            {!inStock ? "สินค้าหมด" : inventory.lowStock ? `สินค้าใกล้หมด · เหลือรวม ${inventory.sellableStock} ชิ้น` : "พร้อมขาย"}
+          </p>
+          <label className="field">
+            เลือกแบบสินค้า
+            <select
+              value={v.variantId}
+              onChange={(e) => {
+                setSelected(e.target.value);
+                setQuantity(1);
+              }}
+            >
+              {variants.map((v) => (
+                <option key={v.variantId} value={v.variantId}>
+                  {v.variantName} —{" "}
+                  {v.status === "active" && v.stockQuantity > 0
+                    ? `${v.stockQuantity} ชิ้น${v.stockQuantity <= 10 ? " · ใกล้หมด" : "พร้อมขาย"}`
+                    : "สินค้าหมด"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="variant-meta">
+            <span>SKU: {v.sku}</span>
+          </div>
+          <p
+            aria-label="Variant availability"
+            className={"stock my-4 " + (!variantAvailable ? "unavailable" : v.stockQuantity <= 10 ? "low-stock" : "")}
+          >
+            {!variantAvailable ? "สินค้าหมด" : v.stockQuantity <= 10 ? `แบบนี้ใกล้หมด · เหลือ ${v.stockQuantity} ชิ้น` : v.stockQuantity + " ชิ้นพร้อมขาย"}
+            {inCart > 0 ? " · " + inCart + " ชิ้นในตะกร้า" : ""}
+          </p>
+          <div className="row gap-4 mb-5">
+            <span className="text-sm">เลือกจำนวน</span>
+            <QuantitySelector
+              value={purchaseQuantity}
+              max={available}
+              onChange={setQuantity}
+            />
+          </div>
+          <div className="actions">
+            <button
+              className="button grow"
+              disabled={available < purchaseQuantity}
+              onClick={() => add()}
+            >
+              <ShoppingBag size={17} /> เพิ่มลงตะกร้า
+            </button>
+            <button
+              className="button secondary grow"
+              disabled={available < purchaseQuantity}
+              onClick={() => add(true)}
+            >
+              ไปยืนยันคำสั่งซื้อ
+            </button>
+          </div>
+          {added && <p role="status" className="ux-notice">เพิ่มสินค้าลงตะกร้าแล้ว · <Link href="/cart" className="text-link">ดูตะกร้าและตรวจยอดรวม →</Link></p>}
+          <div className="detail-promises">
+            <span>
+              <Truck size={17} /> ค่าส่ง 60 บาท / ส่งฟรีเมื่อครบ 3,000 บาท
+            </span>
+            <span>
+              <ShieldCheck size={17} /> ซื้อจากหลายร้านจะแยกพัสดุจัดส่ง
+            </span>
+          </div>
+        </div>
+      </div>
+      <section className="reviews-section">
+        <div className="row between">
+          <h2>
+            รีวิวจากผู้ซื้อ{" "}
+            <span className="muted text-lg">({reviews.length})</span>
+          </h2>
+          <RatingStars rating={rating} />
+        </div>
+        {reviews.length ? (
+          reviews.map((r) => (
+            <article className="review" key={r.reviewId}>
+              <div className="row between">
+                <b>
+                  {customers.find((c) => c.customerId === r.customerId)
+                    ?.fullName ?? "Customer"}
+                </b>
+                <span className="muted text-sm">{date(r.createdAt)}</span>
+              </div>
+              <RatingStars rating={r.rating} />
+              <p>{r.comment}</p>
+            </article>
+          ))
+        ) : (
+          <EmptyState
+            title="ยังไม่มีรีวิว"
+            description="รีวิวสินค้าได้จากหน้าคำสั่งซื้อ เมื่อได้รับสินค้าครบแล้ว"
+          />
+        )}
+      </section>
+    </div>
+  );
+}
+

@@ -1,14 +1,14 @@
 // รูปแบบข้อมูลที่สอดคล้องกับตาราง payments
-export type PaymentMethod =
-  "QR Payment" | "Credit/Debit Card" | "Cash on Delivery";
+export type payment_method =
+  "QR payment" | "Credit/Debit Card" | "Cash on Delivery";
 
-export interface Payment {
-  paymentId: string;
-  orderId: string;
-  paymentMethod: PaymentMethod;
-  paymentStatus: "Pending" | "Paid" | "Refunded" | "Failed";
-  paidAt: string | null;
+export interface payment {
+  payment_id: string;
+  order_id: string;
+  payment_method: payment_method;
+  payment_status: "Pending" | "Paid" | "Refunded" | "Failed";
+  paid_at: string | null;
   amount: number;
-  transactionRef: string | null;
-  createdAt: string;
+  transaction_ref: string | null;
+  created_at: string;
 }

@@ -1,53 +1,53 @@
 "use client";
 import { Modal } from "@/components/ui/dialog";
 import { useStore } from "@/context/store-provider";
-import { Review } from "@/types";
+import { review } from "@/types";
 import { Star } from "lucide-react";
 import { useState } from "react";
 
 export function ReviewForm({
-  productId,
+  product_id,
   existing,
-  onClose,
+  on_close,
 }: {
-  productId: string;
-  existing?: Review;
-  onClose: () => void;
+  product_id: string;
+  existing?: review;
+  on_close: () => void;
 }) {
-  const { saveReview } = useStore();
-  const [rating, setRating] = useState(existing?.rating ?? 0);
-  const [comment, setComment] = useState(existing?.comment ?? "");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const { save_review } = useStore();
+  const [rating, set_rating] = useState(existing?.rating ?? 0);
+  const [comment, set_comment] = useState(existing?.comment ?? "");
+  const [errors, set_errors] = useState<Record<string, string>>({});
+  const [busy, set_busy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
     const next: Record<string, string> = {};
-    if (rating < 1 || rating > 5) next.rating = "Choose a rating from 1 to 5.";
-    if (!comment.trim()) next.comment = "Please write a short review.";
-    setErrors(next);
+    if (rating < 1 || rating > 5) next.rating = "กรุณาเลือกคะแนน 1–5 ดาว";
+    if (!comment.trim()) next.comment = "กรุณาเขียนความคิดเห็น";
+    set_errors(next);
     if (Object.keys(next).length) return;
-    setBusy(true);
+    set_busy(true);
     try {
-      await saveReview({ productId, rating, comment }, existing?.reviewId);
-      onClose();
+      await save_review({ product_id, rating, comment }, existing?.review_id);
+      on_close();
     } catch (error) {
-      setErrors({
+      set_errors({
         submit:
-          error instanceof Error ? error.message : "Could not save review.",
+          error instanceof Error ? error.message : "บันทึกรีวิวไม่สำเร็จ",
       });
     } finally {
-      setBusy(false);
+      set_busy(false);
     }
   }
   return (
     <Modal
-      title={existing ? "Edit your review" : "Write a review"}
-      onClose={onClose}
+      title={existing ? "แก้ไขรีวิว" : "เขียนรีวิว"}
+      on_close={on_close}
     >
       <form onSubmit={submit} noValidate>
         <fieldset className="mb-5">
-          <legend className="mb-2 text-sm">Your rating</legend>
+          <legend className="mb-2 text-sm">คะแนนของคุณ</legend>
           <div className="star-input">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -55,7 +55,7 @@ export function ReviewForm({
                 type="button"
                 aria-label={n + " stars"}
                 aria-pressed={rating === n}
-                onClick={() => setRating(n)}
+                onClick={() => set_rating(n)}
               >
                 <Star fill={n <= rating ? "currentColor" : "none"} size={29} />
               </button>
@@ -66,11 +66,11 @@ export function ReviewForm({
           )}
         </fieldset>
         <label className="field">
-          Your review
+          ความคิดเห็นของคุณ
           <textarea
-            aria-label="Your review"
+            aria-label="ความคิดเห็นของคุณ"
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => set_comment(e.target.value)}
             rows={4}
             aria-invalid={!!errors.comment}
             required
@@ -85,11 +85,11 @@ export function ReviewForm({
           </p>
         )}
         <div className="actions mt-5">
-          <button type="button" className="button secondary" onClick={onClose}>
-            Cancel
+          <button type="button" className="button secondary" onClick={on_close}>
+            ยกเลิก
           </button>
           <button className="button" disabled={busy}>
-            Submit review
+            บันทึกรีวิว
           </button>
         </div>
       </form>

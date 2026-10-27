@@ -1,42 +1,42 @@
 import { transaction } from "../lib/transaction.js";
-import { getInventory } from "./products.service.js";
+import { get_inventory } from "./products.service.js";
 const title = (value: string) => value[0].toUpperCase() + value.slice(1);
-export async function getStore() {
+export async function get_store() {
   return transaction(async (client) => {
-    const inventory = await getInventory(undefined, client);
+    const inventory = await get_inventory(undefined, client);
     const merchants = (
       await client.query(
-        'SELECT merchant_id::text AS "merchantId",merchant_name AS "merchantName",email,phone,status FROM merchants ORDER BY merchant_id',
+        'SELECT merchant_id::text AS "merchant_id",merchant_name AS "merchant_name",email,phone,status FROM merchants ORDER BY merchant_id',
       )
     ).rows;
     const categories = (
       await client.query(
-        'SELECT category_id::text AS "categoryId",category_name AS "categoryName",is_active AS "isActive" FROM categories ORDER BY category_id',
+        'SELECT category_id::text AS "category_id",category_name AS "category_name",is_active AS "is_active" FROM categories ORDER BY category_id',
       )
     ).rows;
     const customers = (
       await client.query(
-        'SELECT customer_id::text AS "customerId",full_name AS "fullName",email,phone FROM customers ORDER BY customer_id',
+        'SELECT customer_id::text AS "customer_id",full_name AS "full_name",email,phone FROM customers ORDER BY customer_id',
       )
     ).rows;
     const reviews = (
       await client.query(
-        'SELECT review_id::text AS "reviewId",customer_id::text AS "customerId",product_id::text AS "productId",rating,coalesce(review_text,\'\') AS comment,created_at AS "createdAt" FROM reviews',
+        'SELECT review_id::text AS "review_id",customer_id::text AS "customer_id",product_id::text AS "product_id",rating,coalesce(review_text,\'\') AS comment,created_at AS "created_at" FROM reviews',
       )
     ).rows;
-    const rawOrders = (
+    const raw_orders = (
       await client.query(
         "SELECT * FROM orders ORDER BY order_date DESC,order_id DESC",
       )
     ).rows;
     const items = (
-      await client.query(`SELECT i.order_item_id::text AS "orderItemId",i.order_id::text AS "orderId",i.variant_id::text AS "variantId",
-   p.product_id::text AS "productId",p.merchant_id::text AS "merchantId",p.category_id::text AS "categoryId",
-   p.product_name AS "productName",v.variant_name AS "variantName",i.quantity,i.unit_price AS "unitPrice",i.quantity*i.unit_price AS subtotal
+      await client.query(`SELECT i.order_item_id::text AS "order_item_id",i.order_id::text AS "order_id",i.variant_id::text AS "variant_id",
+   p.product_id::text AS "product_id",p.merchant_id::text AS "merchant_id",p.category_id::text AS "category_id",
+   p.product_name AS "product_name",v.variant_name AS "variant_name",i.quantity,i.unit_price AS "unit_price",i.quantity*i.unit_price AS subtotal
    FROM order_items i JOIN product_variants v USING(variant_id) JOIN products p USING(product_id)`)
     ).rows.map((i) => ({
       ...i,
-      unitPrice: Number(i.unitPrice),
+      unit_price: Number(i.unit_price),
       subtotal: Number(i.subtotal),
     }));
     const payments = (
@@ -47,52 +47,52 @@ export async function getStore() {
     const shipments = (
       await client.query("SELECT * FROM shipments ORDER BY shipment_id")
     ).rows;
-    const orders = rawOrders.map((o) => {
-      const oi = items.filter((i) => i.orderId === o.order_id);
+    const orders = raw_orders.map((o) => {
+      const oi = items.filter((i) => i.order_id === o.order_id);
       const ss = shipments
         .filter((s) => s.order_id === o.order_id)
         .map((s) => ({
-          shipmentId: s.shipment_id,
-          orderId: s.order_id,
-          merchantId: s.merchant_id,
+          shipment_id: s.shipment_id,
+          order_id: s.order_id,
+          merchant_id: s.merchant_id,
           carrier: s.carrier ?? "",
-          trackingNumber: s.tracking_number ?? "",
-          shippingStatus: title(s.shipment_status),
-          shippingCost: Number(s.shipping_cost),
-          shippedAt: s.shipped_at,
-          deliveredAt: s.delivered_at,
+          tracking_number: s.tracking_number ?? "",
+          shipping_status: title(s.shipment_status),
+          shipping_cost: Number(s.shipping_cost),
+          shipped_at: s.shipped_at,
+          delivered_at: s.delivered_at,
         }));
       const pp = payments
         .filter((p) => p.order_id === o.order_id)
         .map((p) => ({
-          paymentId: p.payment_id,
-          orderId: p.order_id,
-          paymentMethod: p.payment_method,
-          paymentStatus: title(p.payment_status),
+          payment_id: p.payment_id,
+          order_id: p.order_id,
+          payment_method: p.payment_method,
+          payment_status: title(p.payment_status),
           amount: Number(p.amount),
-          transactionRef: p.transaction_ref,
-          paidAt: p.paid_at,
-          createdAt: p.created_at,
+          transaction_ref: p.transaction_ref,
+          paid_at: p.paid_at,
+          created_at: p.created_at,
         }));
       const subtotal = oi.reduce((n, i) => n + i.subtotal, 0),
-        shippingFee = ss.reduce((n, s) => n + s.shippingCost, 0);
+        shipping_fee = ss.reduce((n, s) => n + s.shipping_cost, 0);
       return {
-        orderId: o.order_id,
-        customerId: o.customer_id,
-        orderDate: o.order_date,
+        order_id: o.order_id,
+        customer_id: o.customer_id,
+        order_date: o.order_date,
         status: title(o.order_status),
-        discountAmount: Number(o.discount_amount),
+        discount_amount: Number(o.discount_amount),
         subtotal,
-        shippingFee,
-        totalAmount: subtotal + shippingFee - Number(o.discount_amount),
+        shipping_fee,
+        total_amount: subtotal + shipping_fee - Number(o.discount_amount),
         items: oi,
         shipments: ss,
         payment: pp[0],
         payments: pp,
         address: {
-          fullName: o.shipping_name,
+          full_name: o.shipping_name,
           phone: o.shipping_phone,
-          addressLine: o.shipping_address,
+          address_line: o.shipping_address,
         },
       };
     });
@@ -109,7 +109,7 @@ export async function getStore() {
       reviews,
       orders,
       report,
-      currentCustomerId: "1",
+      current_customer_id: "1",
     };
   }, true);
 }

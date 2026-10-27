@@ -9,21 +9,21 @@ export function MerchantNav() {
     <div className="merchant-nav">
       <div className="row gap-2">
         <Store size={18} />
-        <b>Merchant workspace</b>
+        <b>ส่วนจัดการร้านค้า</b>
       </div>
-      <nav aria-label="Merchant navigation">
+      <nav aria-label="merchant navigation">
         {["products", "orders", "reports"].map((item) => (
           <Link
             key={item}
             className={path.includes(item) ? "active" : ""}
             href={"/merchant/" + item}
           >
-            {item[0].toUpperCase() + item.slice(1)}
+            {{ products: "จัดการสินค้า", orders: "จัดส่งคำสั่งซื้อ", reports: "รายงานยอดขาย" }[item]}
           </Link>
         ))}
       </nav>
-      <Link href="/" className="muted text-sm">
-        Back to storefront <ArrowUpRight size={13} />
+      <Link href="/" className="button secondary">
+        กลับไปหน้าซื้อสินค้า <ArrowUpRight size={14} />
       </Link>
     </div>
   );

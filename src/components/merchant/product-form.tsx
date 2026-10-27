@@ -1,51 +1,51 @@
 "use client";
 import { Modal } from "@/components/ui/dialog";
 import { useStore } from "@/context/store-provider";
-import { Product, ProductInput } from "@/types";
+import { product, product_input } from "@/types";
 import { useState } from "react";
-import { blankVariant, VariantEditor } from "./variant-editor";
+import { blank_variant, VariantEditor } from "./variant-editor";
 
 export function ProductForm({
   product,
-  merchantId,
-  onClose,
+  merchant_id,
+  on_close,
 }: {
-  product?: Product;
-  merchantId: string;
-  onClose: () => void;
+  product?: product;
+  merchant_id: string;
+  on_close: () => void;
 }) {
-  const { data, saveProduct } = useStore();
+  const { data, save_product } = useStore();
   const { categories, merchants } = data;
-  const [form, setForm] = useState<ProductInput>({
-    merchantId: product?.merchantId ?? merchantId,
+  const [form, set_form] = useState<product_input>({
+    merchant_id: product?.merchant_id ?? merchant_id,
     name: product?.name ?? "",
     description: product?.description ?? "",
-    categoryId: product?.categoryId ?? "",
+    category_id: product?.category_id ?? "",
     active: product?.active ?? true,
     variants: product
       ? data.variants
-          .filter((v) => v.productId === product.productId)
-          .map((v) => ({ ...v, originalStockQuantity: v.stockQuantity }))
-      : [blankVariant()],
+          .filter((v) => v.product_id === product.product_id)
+          .map((v) => ({ ...v, original_stock_quantity: v.stock_quantity }))
+      : [blank_variant()],
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const [errors, set_errors] = useState<Record<string, string>>({});
+  const [busy, set_busy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
     const next: Record<string, string> = {};
-    if (!form.merchantId) next.merchantId = "Choose a merchant.";
-    if (!form.name.trim()) next.name = "Product name is required.";
-    if (!form.categoryId) next.categoryId = "Choose a category.";
+    if (!form.merchant_id) next.merchant_id = "Choose a merchant.";
+    if (!form.name.trim()) next.name = "product name is required.";
+    if (!form.category_id) next.category_id = "Choose a category.";
     if (!form.variants.length) next.variants = "Add at least one variant.";
     form.variants.forEach((v, i) => {
-      if (!v.variantName.trim())
-        next[i + "-variantName"] = "Variant name is required.";
+      if (!v.variant_name.trim())
+        next[i + "-variant_name"] = "Variant name is required.";
       if (!v.sku.trim()) next[i + "-sku"] = "SKU is required.";
       else if (
         data.variants.some(
           (other) =>
-            other.productId !== product?.productId &&
+            other.product_id !== product?.product_id &&
             other.sku.toLowerCase() === v.sku.trim().toLowerCase(),
         ) ||
         form.variants.some(
@@ -57,10 +57,10 @@ export function ProductForm({
         next[i + "-sku"] = "SKU must be unique.";
       if (!Number.isFinite(v.price) || v.price < 0)
         next[i + "-price"] = "Enter a price of 0 or more.";
-      if (!Number.isInteger(v.stockQuantity) || v.stockQuantity < 0)
-        next[i + "-stockQuantity"] = "Enter a whole number of 0 or more.";
+      if (!Number.isInteger(v.stock_quantity) || v.stock_quantity < 0)
+        next[i + "-stock_quantity"] = "Enter a whole number of 0 or more.";
     });
-    setErrors(next);
+    set_errors(next);
     if (Object.keys(next).length) {
       setTimeout(
         () =>
@@ -69,51 +69,51 @@ export function ProductForm({
       );
       return;
     }
-    setBusy(true);
+    set_busy(true);
     try {
-      await saveProduct(
+      await save_product(
         {
           ...form,
           name: form.name.trim(),
         },
-        product?.productId,
+        product?.product_id,
       );
-      onClose();
+      on_close();
     } catch (error) {
-      setErrors({
+      set_errors({
         submit:
           error instanceof Error
             ? error.message
             : "Could not save this product.",
       });
     } finally {
-      setBusy(false);
+      set_busy(false);
     }
   }
   return (
-    <Modal title={product ? "Edit product" : "Add a product"} onClose={onClose}>
+    <Modal title={product ? "Edit product" : "Add a product"} on_close={on_close}>
       <form onSubmit={submit} noValidate>
         <div className="form-grid">
           <label className="field col-span-full">
-            Merchant
+            merchant
             <select
-              aria-label="Product merchant"
-              value={form.merchantId}
+              aria-label="product merchant"
+              value={form.merchant_id}
               disabled={!!product}
-              onChange={(e) => setForm({ ...form, merchantId: e.target.value })}
-              aria-invalid={!!errors.merchantId}
+              onChange={(e) => set_form({ ...form, merchant_id: e.target.value })}
+              aria-invalid={!!errors.merchant_id}
             >
               <option value="">Select a merchant</option>
-              {merchants.map((m) => <option key={m.merchantId} value={m.merchantId}>{m.merchantName}</option>)}
+              {merchants.map((m) => <option key={m.merchant_id} value={m.merchant_id}>{m.merchant_name}</option>)}
             </select>
-            {errors.merchantId && <small className="field-error">{errors.merchantId}</small>}
+            {errors.merchant_id && <small className="field-error">{errors.merchant_id}</small>}
           </label>
           <label className="field col-span-full">
-            Product name
+            product name
             <input
-              aria-label="Product name"
+              aria-label="product name"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => set_form({ ...form, name: e.target.value })}
               aria-invalid={!!errors.name}
             />
             {errors.name && (
@@ -126,41 +126,41 @@ export function ProductForm({
               rows={3}
               value={form.description}
               onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
+                set_form({ ...form, description: e.target.value })
               }
             />
           </label>
           <label className="field">
-            Category
+            category
             <select
-              aria-label="Category"
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              aria-invalid={!!errors.categoryId}
+              aria-label="category"
+              value={form.category_id}
+              onChange={(e) => set_form({ ...form, category_id: e.target.value })}
+              aria-invalid={!!errors.category_id}
             >
               <option value="">Select a category</option>
               {categories.map((c) => (
-                <option key={c.categoryId} value={c.categoryId}>
-                  {c.categoryName}
+                <option key={c.category_id} value={c.category_id}>
+                  {c.category_name}
                 </option>
               ))}
             </select>
-            {errors.categoryId && (
-              <small className="field-error">{errors.categoryId}</small>
+            {errors.category_id && (
+              <small className="field-error">{errors.category_id}</small>
             )}
           </label>
           <label className="checkbox-label">
             <input
               type="checkbox"
               checked={form.active}
-              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+              onChange={(e) => set_form({ ...form, active: e.target.checked })}
             />{" "}
             Active · visible in the storefront
           </label>
         </div>
         <VariantEditor
           variants={form.variants}
-          onChange={(variants) => setForm({ ...form, variants })}
+          on_change={(variants) => set_form({ ...form, variants })}
           errors={errors}
         />
         {errors.submit && (
@@ -169,7 +169,7 @@ export function ProductForm({
           </p>
         )}
         <div className="actions mt-6">
-          <button type="button" className="button secondary" onClick={onClose}>
+          <button type="button" className="button secondary" onClick={on_close}>
             Cancel
           </button>
           <button className="button" disabled={busy}>

@@ -1,0 +1,42 @@
+[
+  {
+    "variant_id": "3",
+    "product_id": "2",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "4",
+    "product_id": "2",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "5",
+    "product_id": "3",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "6",
+    "product_id": "3",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "9",
+    "product_id": "5",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "10",
+    "product_id": "5",
+    "stock_quantity": 100
+  },
+  {
+    "variant_id": "15",
+    "product_id": "8",
+    "stock_quantity": 97
+  },
+  {
+    "variant_id": "16",
+    "product_id": "8",
+    "stock_quantity": 100
+  }
+]

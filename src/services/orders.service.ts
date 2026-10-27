@@ -1,7 +1,7 @@
-import type { StoreData } from "@/types";
-export const getOrders = (data: StoreData) =>
-  data.orders.filter((o) => o.customerId === data.currentCustomerId);
-export const getOrderById = (data: StoreData, id: string) =>
-  data.orders.find((o) => o.orderId === id);
-export const getMerchantOrders = (data: StoreData, id: string) =>
-  data.orders.filter((o) => o.items.some((i) => i.merchantId === id));
+import type { store_data } from "@/types";
+export const get_orders = (data: store_data) =>
+  data.orders.filter((o) => o.customer_id === data.current_customer_id);
+export const get_order_by_id = (data: store_data, id: string) =>
+  data.orders.find((o) => o.order_id === id);
+export const get_merchant_orders = (data: store_data, id: string) =>
+  data.orders.filter((o) => o.items.some((i) => i.merchant_id === id));

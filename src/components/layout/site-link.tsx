@@ -3,24 +3,24 @@
 import Link from "next/link";
 import type { ComponentProps } from "react";
 
-export const SITE_NAVIGATION_EVENT = "form:site-navigation";
+export const site_navigation_event = "form:site-navigation";
 
 // แจ้ง navbar แม้ Next.js เปลี่ยนเฉพาะ hash โดยไม่มี hashchange
-type SiteLinkProps = Omit<
+type site_link_props = Omit<
   ComponentProps<typeof Link>,
   "href" | "onNavigate"
 > & {
   href: string;
 };
 
-export function SiteLink({ href, ...props }: SiteLinkProps) {
+export function SiteLink({ href, ...props }: site_link_props) {
   return (
     <Link
       {...props}
       href={href}
       onNavigate={() => {
         window.dispatchEvent(
-          new CustomEvent(SITE_NAVIGATION_EVENT, { detail: href }),
+          new CustomEvent(site_navigation_event, { detail: href }),
         );
       }}
     />

@@ -1418,11 +1418,11 @@ input[type="checkbox"] {
   border-color: var(--primary);
   color: var(--primary);
 }
-.merchant-nav > a {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+.merchant-nav > .button {
+  padding: 8px 16px;
+  min-height: 36px;
   font-size: 12px;
+  white-space: nowrap;
 }
 .merchant-section {
   padding-top: 32px;
@@ -1935,8 +1935,10 @@ tbody tr:hover {
   .merchant-nav > div {
     font-size: 12px;
   }
-  .merchant-nav > a {
-    font-size: 12px;
+  .merchant-nav > .button {
+    font-size: 11px;
+    padding: 6px 12px;
+    min-height: 32px;
   }
   .merchant-nav nav {
     order: 3;
@@ -2221,3 +2223,20 @@ footer a:hover {
     padding: 28px 20px;
   }
 }
+
+/* Clear guidance and readable Thai text for first-time visitors. */
+.ux-notice { margin-top: 16px; padding: 14px 18px; background: #ecfdf5; color: #14532d; border: 1px solid #bbf7d0; border-radius: 12px; line-height: 1.8; }
+.hero h1 { line-height: 1.35; }
+.hero-copy p, .page-heading p, .benefits small { line-height: 1.8; }
+.tabs { flex-wrap: wrap; }
+.cart-link { white-space: nowrap; }
+@media (max-width: 767px) { .announcement { height: auto; line-height: 1.6; padding: 8px 14px; } .hero h1 { font-size: 34px; } .hero-market-card h2 { line-height: 1.5; } .results-row { gap: 12px; flex-wrap: wrap; } .nav-tools { gap: 8px; } }
+.cart-link > span { width: auto; height: auto; border-radius: 8px; padding: 4px 7px; line-height: 1.5; }
+
+.shippy-brand { flex-shrink: 0; }
+.shippy-logo { display: block; width: 180px; height: 64px; object-fit: cover; border-radius: 8px; }
+footer .shippy-brand { display: inline-flex; background: white; border-radius: 10px; padding: 4px 10px; }
+@media (max-width: 767px) { .header .shippy-logo { width: 125px; height: 44px; } }
+
+.stock.low-stock { color: #a15c00; }
+.stock.low-stock::before { background: #d97706; }

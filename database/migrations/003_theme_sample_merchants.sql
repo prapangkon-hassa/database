@@ -26,7 +26,7 @@ WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
 UPDATE merchants m SET merchant_name=s.merchant_name
 FROM shops s WHERE m.merchant_id=s.merchant_id
  AND m.email='merchant'||m.merchant_id||'@example.test'
- AND m.merchant_name='Merchant '||m.merchant_id;
+ AND m.merchant_name='merchant '||m.merchant_id;
 
 WITH labels(category_id,category_name,product_names) AS (VALUES
  (1,'เสื้อผ้า',ARRAY['เสื้อยืดคอกลม','เสื้อโปโล','เสื้อเชิ้ตแขนยาว','กางเกงขายาว','เสื้อคลุม']),
@@ -51,7 +51,7 @@ WITH labels(category_id,category_name,product_names) AS (VALUES
  (20,'อุปกรณ์ทำสวน',ARRAY['กระถางต้นไม้','บัวรดน้ำ','พลั่วปลูกต้นไม้','กรรไกรตัดกิ่ง','ถุงมือทำสวน'])
 )
 UPDATE categories c SET category_name=l.category_name
-FROM labels l WHERE c.category_id=l.category_id AND c.category_name='Category '||c.category_id;
+FROM labels l WHERE c.category_id=l.category_id AND c.category_name='category '||c.category_id;
 
 WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
  (1,'มุมแฟชั่น',ARRAY[1,2,3]),
@@ -102,7 +102,7 @@ WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
  WHERE p.product_id BETWEEN 1 AND 500
  AND p.merchant_id=(p.product_id-1)%20+1
  AND (
-  (p.product_name='Product '||lpad(p.product_id::text,3,'0')
+  (p.product_name='product '||lpad(p.product_id::text,3,'0')
    AND p.description='Sample product for Database Systems. Record '||p.product_id)
   OR (p.description LIKE 'สินค้าตัวอย่างในหมวด% สำหรับฝึกระบบสั่งซื้อและจัดส่ง'
    AND EXISTS (SELECT 1 FROM labels old,unnest(old.product_names) AS names(name)

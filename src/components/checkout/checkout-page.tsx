@@ -4,45 +4,45 @@ import { useCartLines } from "@/components/cart/use-cart-lines";
 import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { useStore } from "@/context/store-provider";
 import { money } from "@/lib/utils";
-import { CheckoutInput, PaymentMethod } from "@/types";
+import { checkout_input, payment_method } from "@/types";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 const fields: {
-  key: keyof Omit<CheckoutInput, "paymentMethod" | "couponCode">;
+  key: keyof Omit<checkout_input, "payment_method" | "coupon_code">;
   label: string;
   type?: string;
-  autoComplete: string;
+  auto_complete: string;
 }[] = [
-  { key: "fullName", label: "Full name", autoComplete: "name" },
-  { key: "phone", label: "Phone number", type: "tel", autoComplete: "tel" },
-  { key: "addressLine", label: "Address line", autoComplete: "street-address" },
+  { key: "full_name", label: "ชื่อและนามสกุลผู้รับ", auto_complete: "name" },
+  { key: "phone", label: "เบอร์โทรศัพท์", type: "tel", auto_complete: "tel" },
+  { key: "address_line", label: "ที่อยู่จัดส่ง (บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์)", auto_complete: "street-address" },
 ];
 
 export function CheckoutPage() {
   const { ready, checkout } = useStore();
   const lines = useCartLines();
-  const [form, setForm] = useState<CheckoutInput>({
-    fullName: "",
+  const [form, set_form] = useState<checkout_input>({
+    full_name: "",
     phone: "",
-    addressLine: "",
-    couponCode: "",
-    paymentMethod: "" as PaymentMethod,
+    address_line: "",
+    coupon_code: "",
+    payment_method: "" as payment_method,
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [orderId, setOrderId] = useState("");
+  const [errors, set_errors] = useState<Record<string, string>>({});
+  const [busy, set_busy] = useState(false);
+  const [order_id, set_order_id] = useState("");
   const subtotal = lines.reduce((n, i) => n + i.quantity * i.variant.price, 0);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
     const next: Record<string, string> = {};
     fields.forEach((f) => {
-      if (!form[f.key].trim()) next[f.key] = f.label + " is required.";
+      if (!form[f.key].trim()) next[f.key] = f.label + ": กรุณากรอกข้อมูล";
     });
-    if (!form.paymentMethod) next.paymentMethod = "Choose a payment method.";
-    setErrors(next);
+    if (!form.payment_method) next.payment_method = "เลือกวิธีชำระเงิน.";
+    set_errors(next);
     if (Object.keys(next).length) {
       setTimeout(
         () =>
@@ -51,18 +51,18 @@ export function CheckoutPage() {
       );
       return;
     }
-    setBusy(true);
+    set_busy(true);
     try {
-      setOrderId(await checkout(form));
+      set_order_id(await checkout(form));
     } catch (error) {
-      setErrors({
+      set_errors({
         submit:
           error instanceof Error
             ? error.message
-            : "Could not place your order. Please try again.",
+            : "สั่งซื้อไม่สำเร็จ กรุณาลองอีกครั้ง",
       });
     } finally {
-      setBusy(false);
+      set_busy(false);
     }
   }
   if (!ready)
@@ -71,24 +71,24 @@ export function CheckoutPage() {
         <LoadingSkeleton />
       </div>
     );
-  if (orderId)
+  if (order_id)
     return (
       <div className="container section">
         <div className="success-panel panel">
           <CheckCircle2 size={54} />
-          <span className="eyebrow">A FEW GOOD THINGS ARE ON THEIR WAY</span>
-          <h1>Thank you, {form.fullName.split(" ")[0]}.</h1>
+          <span className="eyebrow">บันทึกคำสั่งซื้อสำเร็จ</span>
+          <h1>ขอบคุณคุณ {form.full_name.split(" ")[0]}.</h1>
           <p>
-            Your demo order <b>{orderId}</b> has been placed.
+            คำสั่งซื้อทดลองหมายเลข <b>{order_id}</b> ถูกบันทึกแล้ว
           </p>
           <p className="muted">
-            No real payment was taken. Payment status is recorded in your order.
+            ไม่มีการเรียกเก็บเงินจริง ติดตามสถานะและพัสดุได้จากปุ่มด้านล่าง
           </p>
-          <Link className="button" href={"/orders/" + orderId}>
-            View your order <ArrowRight size={16} />
+          <Link className="button" href={"/orders/" + order_id}>
+            ดูคำสั่งซื้อและติดตามพัสดุ <ArrowRight size={16} />
           </Link>
           <Link className="text-link" href="/">
-            Continue shopping
+            เลือกสินค้าเพิ่ม
           </Link>
         </div>
       </div>
@@ -96,27 +96,27 @@ export function CheckoutPage() {
   if (!lines.length)
     return (
       <EmptyState
-        title="Your cart is empty"
-        description="Add an item before checking out."
+        title="ตะกร้ายังว่างอยู่"
+        description="เลือกสินค้าใส่ตะกร้าก่อนยืนยันคำสั่งซื้อ"
       >
         <Link className="button" href="/">
-          Explore products
+          เลือกซื้อสินค้า
         </Link>
       </EmptyState>
     );
   function field(f: (typeof fields)[number]) {
     return (
       <label
-        className={"field " + (f.key === "addressLine" ? "col-span-full" : "")}
+        className={"field " + (f.key === "address_line" ? "col-span-full" : "")}
         key={f.key}
       >
         {f.label}
         <input
           type={f.type ?? "text"}
-          autoComplete={f.autoComplete}
+          autoComplete={f.auto_complete}
           aria-label={f.label}
           value={form[f.key]}
-          onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+          onChange={(e) => set_form({ ...form, [f.key]: e.target.value })}
           aria-invalid={!!errors[f.key]}
           aria-describedby={errors[f.key] ? "error-" + f.key : undefined}
           required
@@ -132,62 +132,62 @@ export function CheckoutPage() {
   return (
     <div className="container section">
       <Link href="/cart" className="back-link">
-        <ArrowLeft size={15} /> Back to cart
+        <ArrowLeft size={15} /> กลับไปแก้ไขตะกร้า
       </Link>
       <div className="page-heading">
-        <span className="eyebrow">ONE LAST STEP</span>
+        <span className="eyebrow">ขั้นตอนที่ 2 จาก 2 · ข้อมูลจัดส่ง</span>
         <h1>
-          Checkout<span className="heading-dot">.</span>
+          ยืนยันคำสั่งซื้อ<span className="heading-dot">.</span>
         </h1>
-        <p>A few details, and we’ll take it from here.</p>
+        <p>กรอกข้อมูลผู้รับ เลือกวิธีชำระเงิน แล้วตรวจยอดรวมก่อนกดยืนยัน</p>
       </div>
       <form noValidate onSubmit={submit} className="checkout-grid">
         <div className="space-y-6">
           <section className="panel form-section">
             <h2>
-              <span className="step-number">1</span> Customer information
+              <span className="step-number">1</span> ข้อมูลผู้รับ
             </h2>
             <div className="form-grid">{fields.slice(0, 2).map(field)}</div>
           </section>
           <section className="panel form-section">
             <h2>
-              <span className="step-number">2</span> Shipping address
+              <span className="step-number">2</span> ที่อยู่จัดส่ง
             </h2>
             <div className="form-grid">{fields.slice(2).map(field)}</div>
           </section>
           <section className="panel form-section">
             <h2>
-              <span className="step-number">3</span> Payment method
+              <span className="step-number">3</span> วิธีชำระเงิน (จำลอง)
             </h2>
             <fieldset
               aria-describedby={
-                errors.paymentMethod ? "payment-error" : undefined
+                errors.payment_method ? "payment-error" : undefined
               }
             >
-              <legend className="sr-only">Choose a payment method</legend>
+              <legend className="sr-only">เลือกวิธีชำระเงิน</legend>
               {(
                 [
-                  "QR Payment",
+                  "QR payment",
                   "Credit/Debit Card",
                   "Cash on Delivery",
-                ] as PaymentMethod[]
+                ] as payment_method[]
               ).map((method) => (
                 <label className="payment-option" key={method}>
                   <input
                     type="radio"
                     name="payment"
                     value={method}
-                    checked={form.paymentMethod === method}
-                    onChange={() => setForm({ ...form, paymentMethod: method })}
+                    checked={form.payment_method === method}
+                    onChange={() => set_form({ ...form, payment_method: method })}
                   />
-                  <span>{method}</span>
-                  <small>Demo</small>
+                  <span>{{ "QR payment": "สแกน QR", "Credit/Debit Card": "บัตรเครดิต / เดบิต", "Cash on Delivery": "เก็บเงินปลายทาง" }[method]}</span>
+                  <small>จำลอง</small>
                 </label>
               ))}
             </fieldset>
-            {errors.paymentMethod && (
+            {errors.payment_method && (
               <small id="payment-error" className="field-error">
-                {errors.paymentMethod}
+                {errors.payment_method}
               </small>
             )}
           </section>
@@ -195,26 +195,26 @@ export function CheckoutPage() {
         <OrderSummary
           subtotal={subtotal}
           discount={
-            form.couponCode.trim().toUpperCase() === "STUDENT10" &&
+            form.coupon_code.trim().toUpperCase() === "STUDENT10" &&
             subtotal >= 500
               ? Math.min(Math.round(subtotal * 10) / 100, 200)
               : 0
           }
         >
           <label className="field">
-            Coupon code
+            รหัสส่วนลด (ไม่บังคับ)
             <input
-              aria-label="Coupon code"
-              value={form.couponCode}
-              onChange={(e) => setForm({ ...form, couponCode: e.target.value })}
+              aria-label="รหัสส่วนลด (ไม่บังคับ)"
+              value={form.coupon_code}
+              onChange={(e) => set_form({ ...form, coupon_code: e.target.value })}
             />
             <small>
-              STUDENT10: 10% off, maximum ฿200; minimum subtotal ฿500.
+              ใช้ STUDENT10 ลด 10% สูงสุด 200 บาท เมื่อซื้อสินค้าครบ 500 บาท
             </small>
           </label>
           <div className="checkout-items">
             {lines.map((i) => (
-              <div key={i.variantId}>
+              <div key={i.variant_id}>
                 <div className="row between gap-4">
                   <span>
                     {i.product.name} × {i.quantity}
@@ -222,7 +222,7 @@ export function CheckoutPage() {
                   <b>{money(i.variant.price * i.quantity)}</b>
                 </div>
                 <small>
-                  {i.variant.variantName} · {money(i.variant.price)} each
+                  {i.variant.variant_name} · {money(i.variant.price)} / ชิ้น
                 </small>
               </div>
             ))}
@@ -233,7 +233,7 @@ export function CheckoutPage() {
             </p>
           )}
           <button disabled={busy} className="button w-full" type="submit">
-            {busy ? "Placing your order…" : "Place order"}
+            {busy ? "กำลังบันทึกคำสั่งซื้อ…" : "ยืนยันคำสั่งซื้อทดลอง"}
             {!busy && <ArrowRight size={16} />}
           </button>
         </OrderSummary>

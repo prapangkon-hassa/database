@@ -1,0 +1,55 @@
+"use client";
+import { RatingStars } from "@/components/ui/display";
+import { useStore } from "@/context/store-provider";
+import { money } from "@/lib/utils";
+import { getProductInventory } from "@/services/products.service";
+import { Product } from "@/types";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+export function ProductCard({ product }: { product: Product }) {
+  const { data } = useStore();
+  const { categories, merchants } = data;
+  const { variants, inStock, lowStock, sellableStock } = getProductInventory(data, product.productId);
+  const reviews = data.reviews.filter((r) => r.productId === product.productId);
+  const rating = reviews.length
+    ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
+    : 0;
+  return (
+    <article className="product-card">
+      <div className="product-content">
+        <div className="row between">
+          <span className="eyebrow">
+            {
+              categories.find((c) => c.categoryId === product.categoryId)
+                ?.categoryName
+            }
+          </span>
+          <RatingStars rating={rating} count={reviews.length} />
+        </div>
+        <Link href={"/products/" + product.productId}>
+          <h3>{product.name}</h3>
+        </Link>
+        <p className="merchant-name">
+          {
+            merchants.find((m) => m.merchantId === product.merchantId)
+              ?.merchantName
+          }
+        </p>
+        <div className="row between product-price">
+          <b>
+            {variants.length
+              ? money(Math.min(...variants.map((v) => v.price)))
+              : "—"}
+          </b>
+          <span className={"stock " + (!inStock ? "unavailable" : lowStock ? "low-stock" : "")}>
+            {!inStock ? "สินค้าหมด" : lowStock ? `ใกล้หมด · เหลือ ${sellableStock} ชิ้น` : "พร้อมขาย"}
+          </span>
+        </div>
+        <Link className="view-product" href={"/products/" + product.productId}>
+          ดูรายละเอียด / เลือกแบบ <ArrowRight size={14} />
+        </Link>
+      </div>
+    </article>
+  );
+}

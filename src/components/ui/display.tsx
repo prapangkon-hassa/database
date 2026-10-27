@@ -15,7 +15,7 @@ export function RatingStars({
   return (
     <span className="rating" aria-label={rating + " out of 5 stars"}>
       <Star size={13} fill="currentColor" />
-      <b>{rating ? rating.toFixed(1) : "New"}</b>
+      <b>{rating ? rating.toFixed(1) : "ใหม่"}</b>
       {count !== undefined && <span className="muted">({count})</span>}
     </span>
   );
@@ -26,7 +26,7 @@ export function StatusBadge({ status }: { status: string }) {
     <span
       className={"badge badge-" + status.toLowerCase().replaceAll(" ", "-")}
     >
-      {status}
+      {({ Pending: "รอดำเนินการ", Paid: "ชำระเงินแล้ว", Processing: "กำลังเตรียมสินค้า", Shipped: "จัดส่งแล้ว", Delivered: "ส่งถึงแล้ว", Completed: "สำเร็จ", Cancelled: "ยกเลิก", Failed: "ไม่สำเร็จ", Refunded: "คืนเงินแล้ว" } as Record<string, string>)[status] ?? status}
     </span>
   );
 }

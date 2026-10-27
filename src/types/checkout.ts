@@ -1,13 +1,13 @@
 // ข้อมูลจากฟอร์ม checkout ที่จะส่งให้ API
-import type { PaymentMethod } from "./payment";
+import type { payment_method } from "./payment";
 
-export interface Address {
-  fullName: string;
+export interface address {
+  full_name: string;
   phone: string;
-  addressLine: string;
+  address_line: string;
 }
 
-export interface CheckoutInput extends Address {
-  paymentMethod: PaymentMethod;
-  couponCode: string;
+export interface checkout_input extends address {
+  payment_method: payment_method;
+  coupon_code: string;
 }

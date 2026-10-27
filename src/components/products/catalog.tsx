@@ -21,17 +21,17 @@ import { ProductGrid } from "./product-grid";
 export default function Catalog() {
   const { data, ready } = useStore();
   const { categories, merchants } = data;
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [merchant, setMerchant] = useState("all");
-  const [sort, setSort] = useState("featured");
-  const [limit, setLimit] = useState(24);
+  const [search, set_search] = useState("");
+  const [category, set_category] = useState("all");
+  const [merchant, set_merchant] = useState("all");
+  const [sort, set_sort] = useState("featured");
+  const [limit, set_limit] = useState(24);
   const products = data.products
     .filter(
       (p) =>
         p.active &&
-        (category === "all" || p.categoryId === category) &&
-        (merchant === "all" || p.merchantId === merchant) &&
+        (category === "all" || p.category_id === category) &&
+        (merchant === "all" || p.merchant_id === merchant) &&
         (p.name + " " + p.description)
           .toLowerCase()
           .includes(search.toLowerCase()),
@@ -40,13 +40,13 @@ export default function Catalog() {
       const price = (id: string) =>
         Math.min(
           ...data.variants
-            .filter((v) => v.productId === id)
+            .filter((v) => v.product_id === id)
             .map((v) => v.price),
         );
       return sort === "low"
-        ? price(a.productId) - price(b.productId)
+        ? price(a.product_id) - price(b.product_id)
         : sort === "high"
-          ? price(b.productId) - price(a.productId)
+          ? price(b.product_id) - price(a.product_id)
           : 0;
     });
   const icons = [Grid2X2, Headphones, ShoppingBag, Shirt, Armchair];
@@ -54,20 +54,20 @@ export default function Catalog() {
     <div className="container">
       <section className="hero">
         <div className="hero-copy">
-          <span className="eyebrow">YOUR EVERYDAY, UPGRADED</span>
+          <span className="eyebrow">เลือกซื้อสินค้าได้ใน 3 ขั้นตอน</span>
           <h1>
-            More to discover.
+            เลือกของที่ใช่
             <br />
-            <span>More to love.</span>
+            <span>สั่งซื้อได้ง่าย ๆ</span>
           </h1>
           <p>
-            Discover thoughtful essentials for the way you live,
-            <br className="desktop-break" /> work, and make yourself at home.
+            เลือกสินค้าและตัวเลือกที่ต้องการ ใส่ตะกร้า
+            <br className="desktop-break" /> แล้วกรอกที่อยู่เพื่อยืนยันคำสั่งซื้อ
           </p>
           <Link className="button" href="#catalog">
-            Explore the collection <ArrowRight size={16} />
+            เริ่มเลือกสินค้า <ArrowRight size={16} />
           </Link>
-          <span className="hero-note">Small details. A better everyday.</span>
+          <span className="hero-note">ใช้งานด้วยบัญชีทดลองได้ทันที ไม่ต้องสมัครสมาชิก</span>
         </div>
         <div className="hero-art">
           <div className="hero-market-card">
@@ -75,29 +75,29 @@ export default function Catalog() {
               <ShoppingBag size={32} aria-hidden="true" />
             </span>
             <div>
-              <span className="eyebrow">ONE PLACE. EVERYDAY FINDS.</span>
-              <h2>Meet your marketplace.</h2>
+              <span className="eyebrow">เลือกซื้อจากหลายร้านในที่เดียว</span>
+              <h2>ค้นหา เลือกซื้อ และติดตามพัสดุ</h2>
             </div>
             <div className="hero-market-stats">
               <div>
                 <strong>{ready ? merchants.length : "—"}</strong>
-                <span>Merchants</span>
+                <span>ร้านค้า</span>
               </div>
               <div>
                 <strong>{ready ? categories.length : "—"}</strong>
-                <span>Categories</span>
+                <span>หมวดหมู่</span>
               </div>
             </div>
             <Link href="/orders" className="hero-tracking-link">
-              <PackageCheck size={21} /> Track your orders{" "}
+              <PackageCheck size={21} /> ติดตามคำสั่งซื้อ{" "}
               <ArrowRight size={18} />
             </Link>
           </div>
           <div className="hero-delivery-card">
             <Truck size={26} aria-hidden="true" />
             <div>
-              <b>Free delivery</b>
-              <span>On orders ฿3,000+</span>
+              <b>ส่งฟรีเมื่อซื้อครบ</b>
+              <span>3,000 บาทขึ้นไป</span>
             </div>
           </div>
         </div>
@@ -106,50 +106,50 @@ export default function Catalog() {
         <div>
           <Truck />
           <span>
-            <b>A little less on delivery</b>
-            <small>Free shipping on orders ฿3,000+</small>
+            <b>1. เลือกสินค้า</b>
+            <small>เลือกแบบและจำนวน แล้วเพิ่มลงตะกร้า</small>
           </span>
         </div>
         <div>
           <ShieldCheck />
           <span>
-            <b>Shop with confidence</b>
-            <small>Thoughtfully selected merchants</small>
+            <b>2. ยืนยันคำสั่งซื้อ</b>
+            <small>กรอกที่อยู่และเลือกวิธีชำระเงินจำลอง</small>
           </span>
         </div>
         <div>
           <PackageCheck />
           <span>
-            <b>With you, all the way</b>
-            <small>Track every step of your order</small>
+            <b>3. ติดตามการจัดส่ง</b>
+            <small>ดูสถานะได้ที่ “คำสั่งซื้อของฉัน”</small>
           </span>
         </div>
       </section>
       <section id="catalog" className="catalog section">
         <div className="row between wrap section-heading">
           <div>
-            <span className="eyebrow">FIND YOUR NEXT FAVORITE</span>
+            <span className="eyebrow">ค้นหาหรือเลือกหมวดหมู่ด้านล่าง</span>
             <h2>
-              Explore our products<span className="heading-dot">.</span>
+              สินค้าทั้งหมด<span className="heading-dot">.</span>
             </h2>
           </div>
-          <p className="muted">The essentials, and a little inspiration.</p>
+          <p className="muted">กดดูรายละเอียดเพื่อเลือกแบบและจำนวน</p>
         </div>
-        <div className="category-tabs" aria-label="Product categories">
+        <div className="category-tabs" aria-label="product categories">
           {[
-            { categoryId: "all", categoryName: "All products" },
+            { category_id: "all", category_name: "ทุกหมวดหมู่" },
             ...categories,
           ].map((c, i) => {
             const Icon = icons[i % icons.length];
             return (
               <button
-                key={c.categoryId}
-                className={category === c.categoryId ? "selected" : ""}
-                aria-pressed={category === c.categoryId}
-                onClick={() => setCategory(c.categoryId)}
+                key={c.category_id}
+                className={category === c.category_id ? "selected" : ""}
+                aria-pressed={category === c.category_id}
+                onClick={() => set_category(c.category_id)}
               >
                 <Icon size={17} />
-                {c.categoryName}
+                {c.category_name}
               </button>
             );
           })}
@@ -160,45 +160,45 @@ export default function Catalog() {
             <input
               id="product-search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search for something good…"
-              aria-label="Search products"
+              onChange={(e) => set_search(e.target.value)}
+              placeholder="ค้นหาชื่อสินค้า เช่น เสื้อ กระเป๋า หนังสือ"
+              aria-label="ค้นหาสินค้า"
             />
           </label>
           <label className="filter-select">
             <SlidersHorizontal size={15} />
             <select
               value={merchant}
-              onChange={(e) => setMerchant(e.target.value)}
-              aria-label="Filter by merchant"
+              onChange={(e) => set_merchant(e.target.value)}
+              aria-label="เลือกร้านค้า"
             >
-              <option value="all">All merchants</option>
+              <option value="all">ทุกร้านค้า</option>
               {merchants.map((m) => (
-                <option key={m.merchantId} value={m.merchantId}>
-                  {m.merchantName}
+                <option key={m.merchant_id} value={m.merchant_id}>
+                  {m.merchant_name}
                 </option>
               ))}
             </select>
           </label>
           <label className="filter-select">
-            <span>Sort:</span>
+            <span>เรียง:</span>
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              aria-label="Sort products"
+              onChange={(e) => set_sort(e.target.value)}
+              aria-label="เรียงลำดับสินค้า"
             >
-              <option value="featured">Featured</option>
-              <option value="low">Price: low to high</option>
-              <option value="high">Price: high to low</option>
+              <option value="featured">แนะนำ</option>
+              <option value="low">ราคา: น้อยไปมาก</option>
+              <option value="high">ราคา: มากไปน้อย</option>
             </select>
           </label>
         </div>
         <div className="results-row">
           <span>
-            Showing <b>{Math.min(limit, products.length)}</b> of{" "}
-            {products.length} products
+            แสดง <b>{Math.min(limit, products.length)}</b> จากทั้งหมด{" "}
+            {products.length} รายการ
           </span>
-          <span>Good finds. Fair prices.</span>
+          {(search || category !== "all" || merchant !== "all") && <button className="text-link" onClick={() => { set_search(""); set_category("all"); set_merchant("all"); set_limit(24); }}>ล้างตัวกรอง</button>}
         </div>
         {!ready ? (
           <LoadingSkeleton />
@@ -208,38 +208,38 @@ export default function Catalog() {
             {products.length > limit && (
               <button
                 className="button secondary mt-6"
-                onClick={() => setLimit(limit + 24)}
+                onClick={() => set_limit(limit + 24)}
               >
-                Show more products
+                ดูสินค้าเพิ่มเติม
               </button>
             )}
           </>
         ) : (
           <EmptyState
-            title="No matches this time"
-            description="Try another search or explore a different category."
+            title="ไม่พบสินค้าที่ตรงกับการค้นหา"
+            description="ลองเปลี่ยนคำค้น หรือกดล้างตัวกรองเพื่อดูสินค้าทั้งหมด"
           >
             <button
               className="button secondary"
               onClick={() => {
-                setSearch("");
-                setCategory("all");
-                setMerchant("all");
+                set_search("");
+                set_category("all");
+                set_merchant("all");
               }}
             >
-              Clear filters
+              ล้างตัวกรอง
             </button>
           </EmptyState>
         )}
       </section>
       <section className="merchant-callout">
         <div>
-          <span className="eyebrow">FROM OUR COMMUNITY</span>
-          <h2>Great finds start with great merchants.</h2>
-          <p>{merchants.length} merchants in the marketplace.</p>
+          <span className="eyebrow">สำหรับผู้ขาย</span>
+          <h2>จัดการสินค้าและการจัดส่งของร้าน</h2>
+          <p>เลือกจาก {merchants.length} ร้านทดลอง เพื่อเพิ่มสินค้า อัปเดตการจัดส่ง หรือดูรายงานยอดขาย</p>
         </div>
         <Link href="/merchant/products" className="button secondary">
-          Merchant workspace <ArrowRight size={16} />
+          เข้าสู่ส่วนผู้ขาย <ArrowRight size={16} />
         </Link>
       </section>
     </div>

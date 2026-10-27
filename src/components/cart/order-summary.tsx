@@ -1,4 +1,4 @@
-import { money, shippingFee } from "@/lib/utils";
+import { money, shipping_fee } from "@/lib/utils";
 import { LockKeyhole } from "lucide-react";
 
 export function OrderSummary({
@@ -12,28 +12,28 @@ export function OrderSummary({
 }) {
   return (
     <aside className="panel summary">
-      <h2>Order summary</h2>
+      <h2>สรุปยอดคำสั่งซื้อ</h2>
       <div className="summary-row">
-        <span>Subtotal</span>
+        <span>ราคาสินค้ารวม</span>
         <span>{money(subtotal)}</span>
       </div>
       <div className="summary-row">
-        <span>Shipping</span>
+        <span>ค่าจัดส่ง</span>
         <span>
-          {shippingFee(subtotal) ? money(shippingFee(subtotal)) : "Free"}
+          {shipping_fee(subtotal) ? money(shipping_fee(subtotal)) : "ฟรี"}
         </span>
       </div>
       <div className="summary-row">
-        <span>Discount</span>
+        <span>ส่วนลด</span>
         <span>{money(discount)}</span>
       </div>
       <div className="summary-total">
-        <b>Total</b>
-        <b>{money(subtotal + shippingFee(subtotal) - discount)}</b>
+        <b>ยอดรวมสุทธิ</b>
+        <b>{money(subtotal + shipping_fee(subtotal) - discount)}</b>
       </div>
       {children}
       <p className="summary-note">
-        <LockKeyhole size={14} /> Demo checkout · No real payment
+        <LockKeyhole size={14} /> ระบบสาธิต ไม่มีการเรียกเก็บเงินจริง
       </p>
     </aside>
   );

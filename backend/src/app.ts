@@ -1,11 +1,11 @@
 import "dotenv/config";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
-import { productsRouter } from "./routes/products.routes.js";
-import { storeRouter } from "./routes/store.routes.js";
-import { getPool } from "./lib/db.js";
+import { products_router } from "./routes/products.routes.js";
+import { store_router } from "./routes/store.routes.js";
+import { get_pool } from "./lib/db.js";
 
-export function createApp() {
+export function create_app() {
   const app = express();
   app.disable("x-powered-by");
   app.use(
@@ -34,19 +34,19 @@ export function createApp() {
   app.get("/api/health", (_request, response) => {
     response.json({
       status: "ok",
-      databaseEnabled: process.env.ENABLE_DATABASE === "true",
+      database_enabled: process.env.ENABLE_DATABASE === "true",
     });
   });
-  app.use("/api/products", productsRouter);
+  app.use("/api/products", products_router);
   app.get("/api/health/database", async (_req, res) => {
-    await getPool().query("SELECT 1 FROM products LIMIT 1");
+    await get_pool().query("SELECT 1 FROM products LIMIT 1");
     res.json({ status: "ok" });
   });
-  app.use("/api", storeRouter);
+  app.use("/api", store_router);
   app.use((_request, response) =>
     response.status(404).json({ error: "Route not found" }),
   );
-  const handleError: ErrorRequestHandler = (
+  const handle_error: ErrorRequestHandler = (
     error,
     _request,
     response,
@@ -86,6 +86,6 @@ export function createApp() {
     if (status === 500)
       console.error("API request failed:", error.code || error.name);
   };
-  app.use(handleError);
+  app.use(handle_error);
   return app;
 }

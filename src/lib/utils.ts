@@ -12,7 +12,7 @@ export const date = (value: string) =>
     year: "numeric",
     timeZone: "Asia/Bangkok",
   }).format(new Date(value));
-export const shippingFee = (subtotal: number) =>
+export const shipping_fee = (subtotal: number) =>
   subtotal === 0 || subtotal >= 3000 ? 0 : 60;
 export const uid = (prefix: string) =>
   prefix + "-" + crypto.randomUUID().slice(0, 8).toUpperCase();

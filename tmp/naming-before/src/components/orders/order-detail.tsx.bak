@@ -1,0 +1,223 @@
+"use client";
+import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
+import { ReviewForm } from "@/components/reviews/review-form";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { StatusBadge } from "@/components/ui/display";
+import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
+import { useStore } from "@/context/store-provider";
+import { date, money } from "@/lib/utils";
+import { ArrowLeft, Pencil, Star, Trash2, Truck } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+export function OrderDetail({ id }: { id: string }) {
+  const { data, ready, deleteReview } = useStore();
+  const { merchants } = data;
+  const currentCustomer = { customerId: data.currentCustomerId };
+  const [reviewProduct, setReviewProduct] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const order = data.orders.find(
+    (o) => o.orderId === id && o.customerId === currentCustomer.customerId,
+  );
+  if (!ready)
+    return (
+      <div className="container section">
+        <LoadingSkeleton />
+      </div>
+    );
+  if (!order)
+    return (
+      <EmptyState
+        title="ไม่พบคำสั่งซื้อ"
+        description="ไม่พบคำสั่งซื้อนี้ในบัญชีทดลองของคุณ"
+      >
+        <Link className="button" href="/orders">
+          คำสั่งซื้อของฉัน
+        </Link>
+      </EmptyState>
+    );
+  return (
+    <div className="container section">
+      <Link href="/orders" className="back-link">
+        <ArrowLeft size={15} /> คำสั่งซื้อทั้งหมด
+      </Link>
+      <div className="page-heading row between wrap">
+        <div>
+          <span className="eyebrow">รายละเอียดคำสั่งซื้อ</span>
+          <h1>{order.orderId}</h1>
+          <p>สั่งซื้อเมื่อ {date(order.orderDate)}</p>
+        </div>
+        <StatusBadge status={order.status} />
+      </div>
+      <section className="panel tracking-panel">
+        <div className="row between wrap">
+          <h2>สถานะคำสั่งซื้อ</h2>
+          <p className="muted">ซื้อหลายร้านจะแยกพัสดุ · เก็บเงินปลายทางจะแสดงชำระเงินแล้วเมื่อส่งครบ</p>
+          {order.status === "Cancelled" && (
+            <span className="field-error">คำสั่งซื้อนี้ถูกยกเลิกแล้ว</span>
+          )}
+        </div>
+        {order.status !== "Cancelled" && <OrderStatusTimeline order={order} />}
+      </section>
+      <div className="checkout-grid mt-6">
+        <div className="space-y-6">
+          <section className="panel form-section">
+            <h2>สินค้าที่สั่งซื้อ</h2>
+            {order.items.map((item) => {
+              const review = data.reviews.find(
+                (r) =>
+                  r.productId === item.productId &&
+                  r.customerId === currentCustomer.customerId,
+              );
+              return (
+                <div className="order-detail-item" key={item.orderItemId}>
+                  <div className="grow">
+                    <h3>{item.productName}</h3>
+                    <p className="muted text-sm">{item.variantName}</p>
+                    <p className="text-sm my-2">
+                      {money(item.unitPrice)} × {item.quantity}
+                    </p>
+                    {order.status === "Completed" && (
+                      <div className="row gap-3 wrap">
+                        <button
+                          className="text-link"
+                          onClick={() => setReviewProduct(item.productId)}
+                        >
+                          {review ? <Pencil size={13} /> : <Star size={13} />}{" "}
+                          {review ? "แก้ไขรีวิว" : "เขียนรีวิว"}
+                        </button>
+                        {review && (
+                          <button
+                            className="text-link muted"
+                            onClick={() => setDeleting(review.reviewId)}
+                          >
+                            <Trash2 size={13} /> ลบรีวิว
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <b>{money(item.subtotal)}</b>
+                </div>
+              );
+            })}
+          </section>
+          <section className="panel form-section">
+            <h2>
+              <Truck size={19} /> พัสดุแยกตามร้านค้า
+            </h2>
+            {order.shipments.map((s) => (
+              <div className="shipment-info" key={s.shipmentId}>
+                <div className="row between wrap">
+                  <b>
+                    {
+                      merchants.find((m) => m.merchantId === s.merchantId)
+                        ?.merchantName
+                    }
+                  </b>
+                  <StatusBadge status={s.shippingStatus} />
+                </div>
+                <dl className="info-list">
+                  <div>
+                    <dt>บริษัทขนส่ง</dt>
+                    <dd>{s.carrier || "รอร้านค้าระบุขนส่ง"}</dd>
+                  </div>
+                  <div>
+                    <dt>เลขติดตามพัสดุ</dt>
+                    <dd>{s.trackingNumber || "รอร้านค้าจัดส่ง"}</dd>
+                  </div>
+                  <div>
+                    <dt>ค่าจัดส่ง</dt>
+                    <dd>{money(s.shippingCost)}</dd>
+                  </div>
+                  {s.shippedAt && (
+                    <div>
+                      <dt>วันที่จัดส่ง</dt>
+                      <dd>{date(s.shippedAt)}</dd>
+                    </div>
+                  )}
+                  {s.deliveredAt && (
+                    <div>
+                      <dt>วันที่ส่งถึง</dt>
+                      <dd>{date(s.deliveredAt)}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            ))}
+          </section>
+        </div>
+        <div className="space-y-6">
+          <section className="panel summary">
+            <h2>การชำระเงินและยอดรวม</h2>
+            <div className="row between mb-6">
+              <span>{order.payment.paymentMethod}</span>
+              <StatusBadge status={order.payment.paymentStatus} />
+            </div>
+            <div className="summary-row">
+              <span>ราคาสินค้ารวม</span>
+              <span>{money(order.subtotal)}</span>
+            </div>
+            <div className="summary-row">
+              <span>ส่วนลด</span>
+              <span>−{money(order.discountAmount)}</span>
+            </div>
+            <div className="summary-row">
+              <span>ค่าจัดส่ง</span>
+              <span>{money(order.shippingFee)}</span>
+            </div>
+            <div className="summary-total">
+              <b>ยอดรวมสุทธิ</b>
+              <b>{money(order.totalAmount)}</b>
+            </div>
+            <h3 className="mt-5">ประวัติการชำระเงิน</h3>
+            {order.payments.map((payment) => (
+              <div className="summary-row" key={payment.paymentId}>
+                <span>
+                  {payment.paymentMethod}
+                  <small className="block">
+                    {payment.transactionRef ?? "ไม่มีเลขอ้างอิง"}
+                  </small>
+                  <StatusBadge status={payment.paymentStatus} />
+                </span>
+                <b>{money(payment.amount)}</b>
+              </div>
+            ))}
+          </section>
+          <section className="panel form-section">
+            <h2>ที่อยู่ผู้รับ</h2>
+            <b>{order.address.fullName}</b>
+            <p className="muted leading-7 mt-2">
+              {order.address.addressLine}
+              <br />
+              {order.address.phone}
+            </p>
+          </section>
+        </div>
+      </div>
+      {reviewProduct && (
+        <ReviewForm
+          key={reviewProduct}
+          productId={reviewProduct}
+          existing={data.reviews.find(
+            (r) =>
+              r.productId === reviewProduct &&
+              r.customerId === currentCustomer.customerId,
+          )}
+          onClose={() => setReviewProduct(null)}
+        />
+      )}{" "}
+      {deleting && (
+        <ConfirmDialog
+          title="ลบรีวิวนี้หรือไม่?"
+          description="รีวิวนี้จะถูกลบออกจากหน้าสินค้า"
+          onClose={() => setDeleting(null)}
+          onConfirm={async () => {
+            await deleteReview(deleting);
+            setDeleting(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}

@@ -4,8 +4,8 @@ import { test } from "node:test";
 import { once } from "node:events";
 import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
-import { createApp } from "../src/app.js";
-import { disconnectDatabase } from "../src/lib/db.js";
+import { create_app } from "../src/app.js";
+import { disconnect_database } from "../src/lib/db.js";
 
 test("PostgreSQL integration: isolated disposable database", async (t) => {
   const original = process.env.DATABASE_URL;
@@ -18,7 +18,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
   process.env.DATABASE_URL = url.toString();
   process.env.ENABLE_DATABASE = "true";
   const db = new Pool({ connectionString: url.toString() });
-  const server = createApp().listen(0, "127.0.0.1");
+  const server = create_app().listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();
   assert(address && typeof address !== "string");
@@ -32,12 +32,12 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
     return { status: r.status, body: r.status === 204 ? null : await r.json() };
   }
   const input = (variants: string[], quantity = 1) => ({
-    fullName: "Database Test",
+    full_name: "Database Test",
     phone: "0800000000",
-    addressLine: "University Road",
-    paymentMethod: "QR Payment",
-    couponCode: "",
-    items: variants.map((variantId) => ({ variantId, quantity })),
+    address_line: "University Road",
+    payment_method: "QR payment",
+    coupon_code: "",
+    items: variants.map((variant_id) => ({ variant_id, quantity })),
   });
   try {
     for (const file of ["schema.sql", "logic.sql", "data.sql"])
@@ -87,9 +87,9 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
         );
         const store = await request("/store");
         assert.equal(store.status, 200);
-        assert.equal(store.body.products.length, 500);
+        assert.equal(store.body.products.length, 550);
         assert.equal(
-          store.body.orders.find((o: any) => o.orderId === "1").payments.length,
+          store.body.orders.find((o: any) => o.order_id === "1").payments.length,
           2,
         );
         assert.equal(store.body.products[0].imageUrl, undefined);
@@ -135,7 +135,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
           (
             await request("/orders/checkout", "POST", {
               ...input(["1"]),
-              items: [{ variantId: "1", quantity: 0 }],
+              items: [{ variant_id: "1", quantity: 0 }],
             })
           ).status,
           400,
@@ -151,6 +151,17 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
         assert.equal(r.status, 403);
       },
     );
+    await t.test("sold-out variant rejects checkout without changing any transaction tables", async () => {
+      const snapshot = async () => ({
+        counts: (await db.query("SELECT (SELECT count(*) FROM orders) orders, (SELECT count(*) FROM order_items) items, (SELECT count(*) FROM payments) payments, (SELECT count(*) FROM shipments) shipments")).rows,
+        stock: (await db.query("SELECT variant_id,stock_quantity FROM product_variants WHERE variant_id IN (1,3) ORDER BY variant_id")).rows,
+      });
+      await db.query("UPDATE product_variants SET stock_quantity=0 WHERE variant_id=3");
+      const before = await snapshot();
+      const result = await request("/orders/checkout", "POST", input(["1", "3"]));
+      assert.equal(result.status, 409);
+      assert.deepEqual(await snapshot(), before);
+    });
     await t.test(
       "checkout shortage rolls back all stock and creates no order",
       async () => {
@@ -237,46 +248,51 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
     await t.test(
       "coupon calculated on server, no client totals trusted",
       async () => {
+        await db.query("UPDATE product_variants SET stock_quantity=10 WHERE variant_id=21");
+        const initial = (await db.query("SELECT stock_quantity FROM product_variants WHERE variant_id=21")).rows[0].stock_quantity;
         const r = await request("/orders/checkout", "POST", {
           ...input(["21"], 3),
-          couponCode: "STUDENT10",
-          totalAmount: 1,
+          coupon_code: "STUDENT10",
+          total_amount: 1,
         });
         assert.equal(r.status, 201);
         const o = (
           await db.query("SELECT * FROM orders WHERE order_id=$1", [
-            r.body.orderId,
+            r.body.order_id,
           ])
         ).rows[0];
         const p = (
           await db.query("SELECT amount FROM payments WHERE order_id=$1", [
-            r.body.orderId,
+            r.body.order_id,
           ])
         ).rows[0];
         const subtotal = Number(
           (
             await db.query(
               "SELECT sum(quantity*unit_price) amount FROM order_items WHERE order_id=$1",
-              [r.body.orderId],
+              [r.body.order_id],
             )
           ).rows[0].amount,
         );
         assert.equal(Number(o.discount_amount), Math.min(subtotal * 0.1, 200));
-        assert(Number(p.amount) > 1);
+        assert.equal(Number(p.amount), subtotal - Number(o.discount_amount) + (subtotal >= 3000 ? 0 : 60));
+        assert.equal((await db.query("SELECT stock_quantity FROM product_variants WHERE variant_id=21")).rows[0].stock_quantity, initial - 3);
       },
     );
     await t.test(
       "multi-merchant deliveries complete only after last shipment, including concurrency",
       async () => {
+        // This scenario needs available stock; the catalog intentionally includes sold-out products.
+        await db.query("UPDATE product_variants SET stock_quantity=10 WHERE variant_id IN (1,3)");
         const r = await request("/orders/checkout", "POST", {
           ...input(["1", "3"]),
-          paymentMethod: "Cash on Delivery",
+          payment_method: "Cash on Delivery",
         });
         assert.equal(r.status, 201);
         const ss = (
           await db.query(
             "SELECT shipment_id FROM shipments WHERE order_id=$1",
-            [r.body.orderId],
+            [r.body.order_id],
           )
         ).rows;
         assert.equal(ss.length, 2);
@@ -304,7 +320,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
           (
             await db.query(
               "SELECT order_status FROM orders WHERE order_id=$1",
-              [r.body.orderId],
+              [r.body.order_id],
             )
           ).rows[0].order_status,
           "completed",
@@ -321,7 +337,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
           (
             await db.query(
               "SELECT order_status FROM orders WHERE order_id=$1",
-              [r.body.orderId],
+              [r.body.order_id],
             )
           ).rows[0].order_status,
           "completed",
@@ -330,7 +346,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
           (
             await db.query(
               "SELECT payment_status FROM payments WHERE order_id=$1",
-              [r.body.orderId],
+              [r.body.order_id],
             )
           ).rows[0].payment_status,
           "paid",
@@ -342,17 +358,17 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
       async () => {
         const form = {
           name: "API Test",
-          merchantId: "1",
-          categoryId: "2",
+          merchant_id: "1",
+          category_id: "2",
           description: "Test",
           active: true,
           variants: [
             {
-              variantId: "",
-              variantName: "Standard",
+              variant_id: "",
+              variant_name: "Standard",
               sku: "API-TEST",
               price: 100,
-              stockQuantity: 5,
+              stock_quantity: 5,
               status: "active",
             },
           ],
@@ -360,27 +376,27 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
         const created = await request("/products", "POST", form);
         assert.equal(created.status, 201);
         assert.equal((await request("/products", "POST", form)).status, 409);
-        const inv = (await request("/products/" + created.body.productId)).body;
+        const inv = (await request("/products/" + created.body.product_id)).body;
         const edit = {
           ...inv.products[0],
           variants: inv.variants.map((v: any) => ({
             ...v,
-            originalStockQuantity: v.stockQuantity,
-            stockQuantity: 0,
+            original_stock_quantity: v.stock_quantity,
+            stock_quantity: 0,
           })),
         };
         assert.equal(
-          (await request("/products/" + created.body.productId, "PUT", edit))
+          (await request("/products/" + created.body.product_id, "PUT", edit))
             .status,
           200,
         );
         assert.equal(
-          (await request("/products/" + created.body.productId, "PUT", edit))
+          (await request("/products/" + created.body.product_id, "PUT", edit))
             .status,
           409,
         );
         assert.equal(
-          (await request("/products/" + created.body.productId, "DELETE"))
+          (await request("/products/" + created.body.product_id, "DELETE"))
             .status,
           204,
         );
@@ -391,15 +407,15 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
       "review CRUD requires completed purchase and preserves customer ownership",
       async () => {
         const created = await request("/reviews", "POST", {
-          productId: "2",
+          product_id: "2",
           rating: 5,
           comment: "Test",
         });
         assert.equal(created.status, 201);
         assert.equal(
           (
-            await request("/reviews/" + created.body.reviewId, "PUT", {
-              productId: "2",
+            await request("/reviews/" + created.body.review_id, "PUT", {
+              product_id: "2",
               rating: 4,
               comment: "Updated",
             })
@@ -407,13 +423,13 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
           200,
         );
         assert.equal(
-          (await request("/reviews/" + created.body.reviewId, "DELETE")).status,
+          (await request("/reviews/" + created.body.review_id, "DELETE")).status,
           204,
         );
         assert.equal(
           (
             await request("/reviews", "POST", {
-              productId: "500",
+              product_id: "500",
               rating: 5,
               comment: "No purchase",
             })
@@ -446,7 +462,7 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
     );
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
-    await disconnectDatabase();
+    await disconnect_database();
     await db.end();
     // Only this test-created name is eligible for cleanup; never the user's database.
     assert(/^fulfillment_test_\d+$/.test(name));
@@ -455,3 +471,4 @@ test("PostgreSQL integration: isolated disposable database", async (t) => {
     process.env.DATABASE_URL = original;
   }
 });
+

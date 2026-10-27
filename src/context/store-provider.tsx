@@ -1,12 +1,12 @@
 "use client";
-import * as cartService from "@/services/cart.service";
+import * as cart_service from "@/services/cart.service";
 import { api } from "@/services/api";
 import type {
-  CheckoutInput,
-  ProductInput,
-  Review,
-  ShippingStatus,
-  StoreData,
+  checkout_input,
+  product_input,
+  review,
+  shipping_status,
+  store_data,
 } from "@/types";
 import {
   createContext,
@@ -16,7 +16,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-const empty: StoreData = {
+const empty: store_data = {
   products: [],
   variants: [],
   orders: [],
@@ -25,77 +25,87 @@ const empty: StoreData = {
   merchants: [],
   categories: [],
   customers: [],
-  currentCustomerId: "1",
+  current_customer_id: "1",
   report: [],
 };
-type Store = {
-  data: StoreData;
+type store_state = {
+  data: store_data;
   ready: boolean;
   notice: string;
   refresh: () => Promise<void>;
-  addToCart: (id: string, quantity: number) => boolean;
-  setQuantity: (id: string, quantity: number) => void;
-  removeItem: (id: string) => void;
-  saveProduct: (input: ProductInput, id?: string) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
-  checkout: (input: CheckoutInput) => Promise<string>;
-  updateShipment: (
+  add_to_cart: (id: string, quantity: number) => boolean;
+  set_quantity: (id: string, quantity: number) => void;
+  remove_item: (id: string) => void;
+  save_product: (input: product_input, id?: string) => Promise<void>;
+  delete_product: (id: string) => Promise<void>;
+  checkout: (input: checkout_input) => Promise<string>;
+  update_shipment: (
     id: string,
-    status: ShippingStatus,
+    status: shipping_status,
     carrier?: string,
     tracking?: string,
   ) => Promise<void>;
-  saveReview: (
-    input: Pick<Review, "productId" | "rating" | "comment">,
+  save_review: (
+    input: Pick<review, "product_id" | "rating" | "comment">,
     id?: string,
   ) => Promise<void>;
-  deleteReview: (id: string) => Promise<void>;
+  delete_review: (id: string) => Promise<void>;
 };
-const Context = createContext<Store | null>(null);
-const cartKey = "ef-api-cart-v1";
+const Context = createContext<store_state | null>(null);
+// Read carts saved before the snake_case API migration without losing their contents.
+function normalize_cart(cart: unknown[]): { variant_id: string; quantity: number }[] {
+  return cart.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const variant_id = row.variant_id ?? row["variant" + "Id"];
+    return typeof variant_id === "string" && Number.isInteger(row.quantity) && Number(row.quantity) > 0
+      ? [{ variant_id, quantity: Number(row.quantity) }] : [];
+  });
+}
+const cart_key = "ef-api-cart-v1";
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState(empty),
-    [ready, setReady] = useState(false),
-    [notice, setNotice] = useState(""),
-    [error, setError] = useState("");
+  const [data, set_data] = useState(empty),
+    [ready, set_ready] = useState(false),
+    [notice, set_notice] = useState(""),
+    [error, set_error] = useState("");
   const ref = useRef(data),
     generation = useRef(0),
     pending = useRef(false);
-  function commit(next: StoreData) {
+  function commit(next: store_data) {
     ref.current = next;
-    setData(next);
+    set_data(next);
   }
-  function saveCart(next: StoreData) {
+  function save_cart(next: store_data) {
     commit(next);
     try {
-      localStorage.setItem(cartKey, JSON.stringify(next.cart));
+      localStorage.setItem(cart_key, JSON.stringify(next.cart));
     } catch {
-      setNotice("Cart storage is unavailable");
+      set_notice("ไม่สามารถบันทึกตะกร้าในเบราว์เซอร์นี้ได้");
     }
   }
   async function refresh() {
     const version = ++generation.current;
     try {
-      const result = await api<Omit<StoreData, "cart">>("/store");
+      const result = await api<Omit<store_data, "cart">>("/store");
       if (version !== generation.current) return;
       commit({ ...result, cart: ref.current.cart });
-      setReady(true);
-      setError("");
+      set_ready(true);
+      set_error("");
     } catch (e) {
       if (version === generation.current)
-        setError(e instanceof Error ? e.message : "API unavailable");
+        set_error(e instanceof Error ? e.message : "API unavailable");
     }
   }
   useEffect(() => {
     try {
-      const cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+      const cart = JSON.parse(localStorage.getItem(cart_key) || "[]");
       if (Array.isArray(cart))
         ref.current = {
           ...ref.current,
-          cart: cart.filter(
+          cart: normalize_cart(cart).filter(
             (i) =>
               i &&
-              typeof i.variantId === "string" &&
+              typeof i.variant_id === "string" &&
               Number.isInteger(i.quantity) &&
               i.quantity > 0,
           ),
@@ -106,10 +116,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!pending.current) void refresh();
     };
     const storage = (event: StorageEvent) => {
-      if (event.key === cartKey) {
+      if (event.key === cart_key) {
         try {
           const cart = JSON.parse(event.newValue || "[]");
-          if (Array.isArray(cart)) commit({ ...ref.current, cart });
+          if (Array.isArray(cart)) commit({ ...ref.current, cart: normalize_cart(cart) });
         } catch {}
       }
       sync();
@@ -129,7 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     if (notice) {
-      const t = setTimeout(() => setNotice(""), 4500);
+      const t = setTimeout(() => set_notice(""), 4500);
       return () => clearTimeout(t);
     }
   }, [notice]);
@@ -150,56 +160,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pending.current = false;
     }
   }
-  const value: Store = {
+  const value: store_state = {
     data,
     ready,
     notice,
     refresh,
-    addToCart: (id, quantity) => {
+    add_to_cart: (id, quantity) => {
       try {
-        saveCart(cartService.addCartItem(ref.current, id, quantity));
-        setNotice("Added to your cart");
+        save_cart(cart_service.add_cart_item(ref.current, id, quantity));
+        set_notice("เพิ่มสินค้าลงตะกร้าแล้ว");
         return true;
       } catch (e) {
-        setNotice((e as Error).message);
+        set_notice((e as Error).message);
         return false;
       }
     },
-    setQuantity: (id, n) =>
-      saveCart(cartService.setCartQuantity(ref.current, id, n)),
-    removeItem: (id) => saveCart(cartService.removeCartItem(ref.current, id)),
-    saveProduct: async (input, id) => {
+    set_quantity: (id, n) =>
+      save_cart(cart_service.set_cart_quantity(ref.current, id, n)),
+    remove_item: (id) => save_cart(cart_service.remove_cart_item(ref.current, id)),
+    save_product: async (input, id) => {
       await mutate(
         "/products" + (id ? "/" + id : ""),
         id ? "PUT" : "POST",
         input,
       );
-      setNotice("Product saved");
+      set_notice("product saved");
     },
-    deleteProduct: async (id) => {
+    delete_product: async (id) => {
       await mutate("/products/" + id, "DELETE");
     },
     checkout: async (input) => {
-      const result = await mutate<{ orderId: string }>(
+      const result = await mutate<{ order_id: string }>(
         "/orders/checkout",
         "POST",
         { ...input, items: ref.current.cart },
       );
-      saveCart({ ...ref.current, cart: [] });
-      return result.orderId;
+      save_cart({ ...ref.current, cart: [] });
+      return result.order_id;
     },
-    updateShipment: async (id, status, carrier, tracking) => {
+    update_shipment: async (id, status, carrier, tracking) => {
       await mutate("/shipments/" + id, "PATCH", { status, carrier, tracking });
-      setNotice("Shipment updated");
+      set_notice("shipment updated");
     },
-    saveReview: async (input, id) => {
+    save_review: async (input, id) => {
       await mutate(
         "/reviews" + (id ? "/" + id : ""),
         id ? "PUT" : "POST",
         input,
       );
     },
-    deleteReview: async (id) => {
+    delete_review: async (id) => {
       await mutate("/reviews/" + id, "DELETE");
     },
   };

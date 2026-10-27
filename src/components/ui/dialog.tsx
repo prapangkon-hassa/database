@@ -5,11 +5,11 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 export function Modal({
   title,
   children,
-  onClose,
+  on_close,
 }: {
   title: string;
   children: ReactNode;
-  onClose: () => void;
+  on_close: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -22,13 +22,13 @@ export function Modal({
     };
   }, []);
   return (
-    <dialog ref={ref} className="modal" onCancel={onClose} aria-label={title}>
+    <dialog ref={ref} className="modal" onCancel={on_close} aria-label={title}>
       <div className="modal-head">
         <h2>{title}</h2>
         <button
           className="icon-button"
-          aria-label="Close dialog"
-          onClick={onClose}
+          aria-label="ปิดหน้าต่าง"
+          onClick={on_close}
         >
           <X size={20} />
         </button>
@@ -41,18 +41,18 @@ export function Modal({
 export function ConfirmDialog({
   title,
   description,
-  onConfirm,
-  onClose,
+  on_confirm,
+  on_close,
 }: {
   title: string;
   description: string;
-  onConfirm: () => void | Promise<void>;
-  onClose: () => void;
+  on_confirm: () => void | Promise<void>;
+  on_close: () => void;
 }) {
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [error, set_error] = useState("");
+  const [busy, set_busy] = useState(false);
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal title={title} on_close={on_close}>
       <p className="muted">{description}</p>
       {error && (
         <p role="alert" className="field-error">
@@ -60,24 +60,24 @@ export function ConfirmDialog({
         </p>
       )}
       <div className="actions mt-6">
-        <button className="button secondary" onClick={onClose}>
-          Cancel
+        <button className="button secondary" onClick={on_close}>
+          ยกเลิก
         </button>
         <button
           className="button danger"
           disabled={busy}
           onClick={async () => {
-            setBusy(true);
+            set_busy(true);
             try {
-              await onConfirm();
+              await on_confirm();
             } catch (e) {
-              setError((e as Error).message);
+              set_error((e as Error).message);
             } finally {
-              setBusy(false);
+              set_busy(false);
             }
           }}
         >
-          Delete
+          ยืนยันการลบ
         </button>
       </div>
     </Modal>

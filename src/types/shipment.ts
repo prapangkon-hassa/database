@@ -1,14 +1,14 @@
 // รูปแบบข้อมูลที่สอดคล้องกับตาราง shipments
-export type ShippingStatus = "Pending" | "Processing" | "Shipped" | "Delivered";
+export type shipping_status = "Pending" | "Processing" | "Shipped" | "Delivered";
 
-export interface Shipment {
-  shipmentId: string;
-  orderId: string;
-  merchantId: string;
-  trackingNumber: string;
+export interface shipment {
+  shipment_id: string;
+  order_id: string;
+  merchant_id: string;
+  tracking_number: string;
   carrier: string;
-  shippingStatus: ShippingStatus;
-  shippingCost: number;
-  shippedAt: string | null;
-  deliveredAt: string | null;
+  shipping_status: shipping_status;
+  shipping_cost: number;
+  shipped_at: string | null;
+  delivered_at: string | null;
 }

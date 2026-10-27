@@ -1,15 +1,15 @@
 -- Synthetic classroom data, never real customer information. Run once after logic.sql.
 INSERT INTO merchants(merchant_name,email,phone)
-SELECT 'Merchant '||n,'merchant'||n||'@example.test','020000'||lpad(n::text,4,'0') FROM generate_series(1,20) n;
-INSERT INTO categories(category_name) SELECT 'Category '||n FROM generate_series(1,20) n;
+SELECT 'merchant '||n,'merchant'||n||'@example.test','020000'||lpad(n::text,4,'0') FROM generate_series(1,20) n;
+INSERT INTO categories(category_name) SELECT 'category '||n FROM generate_series(1,20) n;
 INSERT INTO customers(full_name,email,phone,password_hash)
-SELECT CASE WHEN n=1 THEN 'Demo Customer' ELSE 'Customer '||n END,
+SELECT CASE WHEN n=1 THEN 'Demo customer' ELSE 'customer '||n END,
  'customer'||n||'@example.test','080'||lpad(n::text,7,'0'),
  '!disabled-demo-account' FROM generate_series(1,500) n;
 -- Passwords are disabled, not plaintext; local classroom mode has no login.
 INSERT INTO products(merchant_id,category_id,product_name,description)
 -- Create 25 products per merchant, then apply the themed catalog below.
-SELECT (n-1)%20+1,((n-1)%20+(n-1)/20)%20+1,'Product '||lpad(n::text,3,'0'),
+SELECT (n-1)%20+1,((n-1)%20+(n-1)/20)%20+1,'product '||lpad(n::text,3,'0'),
  'Sample product for Database Systems. Record '||n FROM generate_series(1,500) n;
 -- Classroom sample catalog: merchant themes, related categories and product names.
 -- Explicit sample-data correction: category reports and joined historical names follow it.
@@ -39,7 +39,7 @@ WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
 UPDATE merchants m SET merchant_name=s.merchant_name
 FROM shops s WHERE m.merchant_id=s.merchant_id
  AND m.email='merchant'||m.merchant_id||'@example.test'
- AND m.merchant_name='Merchant '||m.merchant_id;
+ AND m.merchant_name='merchant '||m.merchant_id;
 
 WITH labels(category_id,category_name,product_names) AS (VALUES
  (1,'เสื้อผ้า',ARRAY['เสื้อยืดคอกลม','เสื้อโปโล','เสื้อเชิ้ตแขนยาว','กางเกงขายาว','เสื้อคลุม']),
@@ -64,7 +64,7 @@ WITH labels(category_id,category_name,product_names) AS (VALUES
  (20,'อุปกรณ์ทำสวน',ARRAY['กระถางต้นไม้','บัวรดน้ำ','พลั่วปลูกต้นไม้','กรรไกรตัดกิ่ง','ถุงมือทำสวน'])
 )
 UPDATE categories c SET category_name=l.category_name
-FROM labels l WHERE c.category_id=l.category_id AND c.category_name='Category '||c.category_id;
+FROM labels l WHERE c.category_id=l.category_id AND c.category_name='category '||c.category_id;
 
 WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
  (1,'มุมแฟชั่น',ARRAY[1,2,3]),
@@ -115,7 +115,7 @@ WITH shops(merchant_id,merchant_name,category_ids) AS (VALUES
  WHERE p.product_id BETWEEN 1 AND 500
  AND p.merchant_id=(p.product_id-1)%20+1
  AND (
-  (p.product_name='Product '||lpad(p.product_id::text,3,'0')
+  (p.product_name='product '||lpad(p.product_id::text,3,'0')
    AND p.description='Sample product for Database Systems. Record '||p.product_id)
   OR (p.description LIKE 'สินค้าตัวอย่างในหมวด% สำหรับฝึกระบบสั่งซื้อและจัดส่ง'
    AND EXISTS (SELECT 1 FROM labels old,unnest(old.product_names) AS names(name)
@@ -146,9 +146,9 @@ DECLARE n integer; oid bigint; a bigint; b bigint;
 BEGIN
  FOR n IN 1..500 LOOP
   a := (n-1)*2+1; b := (n%500)*2+1;
-  CALL sp_checkout_order(n,jsonb_build_array(jsonb_build_object('variantId',a,'quantity',1),
-   jsonb_build_object('variantId',b,'quantity',2)), 'Customer '||n,'0800000000',
-   n||' University Road, Bangkok 10110','QR Payment','',oid);
+  CALL sp_checkout_order(n,jsonb_build_array(jsonb_build_object('variant_id',a,'quantity',1),
+   jsonb_build_object('variant_id',b,'quantity',2)), 'customer '||n,'0800000000',
+   n||' University Road, Bangkok 10110','QR payment','',oid);
   UPDATE orders SET order_date=now()-(n%90)*interval '1 day' WHERE order_id=oid;
   UPDATE shipments SET shipment_status='delivered',carrier='Demo Carrier',
    tracking_number='SEED-'||shipment_id,shipped_at=now()-interval '1 hour',delivered_at=now() WHERE order_id=oid;
@@ -160,3 +160,57 @@ SELECT n,n,3+n%3,'Sample review '||n FROM generate_series(1,500) n;
 INSERT INTO payments(order_id,payment_method,payment_status,amount,transaction_ref)
 SELECT order_id,payment_method,'failed',amount,'SEED-FAILED-'||order_id FROM payments WHERE order_id<=20;
 
+
+-- Existing sample products only: three sold-out products and one sold-out option.
+-- Apply after data.sql so seeded checkout orders can finish normally.
+UPDATE product_variants v SET stock_quantity=0
+FROM products p
+WHERE p.product_id=v.product_id
+  AND p.description LIKE 'สินค้าตัวอย่างในหมวด% สำหรับฝึกระบบสั่งซื้อและจัดส่ง'
+  AND v.sku='SKU-'||p.product_id||'-'||CASE WHEN v.variant_name='Standard' THEN '1' ELSE '2' END
+  AND (p.product_id IN (2,5,8) OR (p.product_id=3 AND v.variant_name='Standard'));
+
+-- Low stock on existing sample products, after seeded orders are created.
+UPDATE product_variants v SET stock_quantity=CASE WHEN v.variant_name='Standard' THEN 1 ELSE 2 END
+FROM products p WHERE p.product_id=v.product_id AND p.product_id IN (4,6)
+AND p.description LIKE 'สินค้าตัวอย่างในหมวด% สำหรับฝึกระบบสั่งซื้อและจัดส่ง'
+AND v.variant_name IN ('Standard','Large')
+AND v.sku='SKU-'||p.product_id||'-'||CASE WHEN v.variant_name='Standard' THEN '1' ELSE '2' END;
+
+-- Additional existing sample products: 3 sold out and 3 low stock.
+UPDATE product_variants v
+SET stock_quantity=CASE
+ WHEN p.product_id IN (10,14,18) THEN 0
+ WHEN p.product_id=11 THEN CASE WHEN v.variant_name='Standard' THEN 2 ELSE 3 END
+ WHEN p.product_id=16 THEN CASE WHEN v.variant_name='Standard' THEN 4 ELSE 6 END
+ ELSE CASE WHEN v.variant_name='Standard' THEN 1 ELSE 1 END END
+FROM products p WHERE p.product_id=v.product_id
+AND p.product_id IN (10,11,14,16,18,20)
+AND p.description LIKE 'สินค้าตัวอย่างในหมวด% สำหรับฝึกระบบสั่งซื้อและจัดส่ง'
+AND v.variant_name IN ('Standard','Large')
+AND v.sku='SKU-'||p.product_id||'-'||CASE WHEN v.variant_name='Standard' THEN '1' ELSE '2' END;
+
+-- Extend existing catalog to 550 products. Re-running at 550 is a no-op.
+-- New models have distinct names, descriptions, prices, SKUs and stock.
+DO $$
+DECLARE current_count integer; n integer; source record; new_id bigint;
+BEGIN
+ LOCK TABLE products, product_variants IN SHARE ROW EXCLUSIVE MODE;
+ SELECT count(*) INTO current_count FROM products;
+ IF current_count > 550 OR current_count < 500 THEN
+  RAISE EXCEPTION 'Expected 500..550 existing products, found %',current_count;
+ END IF;
+ FOR n IN 1..(550-current_count) LOOP
+  SELECT p.*,v.price INTO STRICT source FROM products p
+  JOIN LATERAL (SELECT price FROM product_variants WHERE product_id=p.product_id ORDER BY variant_id LIMIT 1) v ON true
+  WHERE p.product_id=n;
+  INSERT INTO products(merchant_id,category_id,product_name,description)
+  VALUES(source.merchant_id,source.category_id,
+   regexp_replace(source.product_name,' รุ่น .*$','')||' รุ่นพิเศษ '||(current_count+n),
+   'สินค้าจำลองรุ่นพิเศษ '||(current_count+n)||' สำหรับเลือกซื้อและทดสอบการจัดส่ง มีตัวเลือก 2 แบบ ราคาและจำนวนคงเหลือแยกตามแบบ')
+  RETURNING product_id INTO new_id;
+  INSERT INTO product_variants(product_id,sku,variant_name,price,stock_quantity)
+  VALUES(new_id,'SKU-'||new_id||'-1','Standard',source.price+25+n*3,15+n%30),
+        (new_id,'SKU-'||new_id||'-2','Large',source.price+55+n*3,12+n%20);
+ END LOOP;
+END $$;

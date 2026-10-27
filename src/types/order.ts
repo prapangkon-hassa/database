@@ -1,9 +1,9 @@
 // รูปแบบข้อมูลที่สอดคล้องกับตาราง orders และ order_items
-import type { Address } from "./checkout";
-import type { Payment } from "./payment";
-import type { Shipment } from "./shipment";
+import type { address } from "./checkout";
+import type { payment } from "./payment";
+import type { shipment } from "./shipment";
 
-export type OrderStatus =
+export type order_status =
   | "Pending"
   | "Paid"
   | "Processing"
@@ -12,35 +12,35 @@ export type OrderStatus =
   | "Completed"
   | "Cancelled";
 
-export interface Order {
-  orderId: string;
-  customerId: string;
-  orderDate: string;
-  status: OrderStatus;
+export interface order {
+  order_id: string;
+  customer_id: string;
+  order_date: string;
+  status: order_status;
   subtotal: number;
-  shippingFee: number;
-  discountAmount: number;
-  totalAmount: number;
+  shipping_fee: number;
+  discount_amount: number;
+  total_amount: number;
 }
 
-export interface OrderItem {
-  orderItemId: string;
-  orderId: string;
-  variantId: string;
-  productName: string;
-  variantName: string;
+export interface order_item {
+  order_item_id: string;
+  order_id: string;
+  variant_id: string;
+  product_name: string;
+  variant_name: string;
   quantity: number;
-  unitPrice: number;
+  unit_price: number;
   subtotal: number;
-  productId: string;
-  merchantId: string;
-  categoryId: string;
+  product_id: string;
+  merchant_id: string;
+  category_id: string;
 }
 
-export interface OrderRecord extends Order {
-  items: OrderItem[];
-  payment: Payment;
-  payments: Payment[];
-  shipments: Shipment[];
-  address: Address;
+export interface order_record extends order {
+  items: order_item[];
+  payment: payment;
+  payments: payment[];
+  shipments: shipment[];
+  address: address;
 }

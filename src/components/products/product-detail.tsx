@@ -4,26 +4,27 @@ import { EmptyState, LoadingSkeleton } from "@/components/ui/feedback";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
 import { useStore } from "@/context/store-provider";
 import { date, money } from "@/lib/utils";
-import { getProductInventory } from "@/services/products.service";
+import { get_product_inventory } from "@/services/products.service";
 import { ArrowLeft, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 export default function ProductDetail({ id }: { id: string }) {
-  const { data, ready, addToCart } = useStore();
+  const { data, ready, add_to_cart } = useStore();
   const { categories, customers, merchants } = data;
   const router = useRouter();
-  const [selected, setSelected] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const p = data.products.find((p) => p.productId === id && p.active);
-  const inventory = getProductInventory(data, id);
+  const [selected, set_selected] = useState("");
+  const [quantity, set_quantity] = useState(1);
+  const [added, set_added] = useState(false);
+  const p = data.products.find((p) => p.product_id === id && p.active);
+  const inventory = get_product_inventory(data, id);
   const variants = inventory.variants;
-  const inStock = inventory.inStock;
+  const in_stock = inventory.in_stock;
   const v =
-    variants.find((v) => v.variantId === selected) ??
-    variants.find((v) => v.status === "active" && v.stockQuantity > 0) ??
+    variants.find((v) => v.variant_id === selected) ??
+    variants.find((v) => v.status === "active" && v.stock_quantity > 0) ??
     variants[0];
-  const reviews = data.reviews.filter((r) => r.productId === id);
+  const reviews = data.reviews.filter((r) => r.product_id === id);
   const rating = reviews.length
     ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length
     : 0;
@@ -31,70 +32,72 @@ export default function ProductDetail({ id }: { id: string }) {
   if (!p || !v)
     return (
       <EmptyState
-        title="Product not found"
-        description="This product may no longer be available."
+        title="ไม่พบสินค้า"
+        description="สินค้านี้อาจถูกปิดการขายแล้ว กรุณาเลือกสินค้าอื่น"
       >
         <Link href="/" className="button">
-          Explore products
+          เลือกซื้อสินค้า
         </Link>
       </EmptyState>
     );
-  const inCart =
-    data.cart.find((c) => c.variantId === v.variantId)?.quantity ?? 0;
-  const variantAvailable = v.status === "active" && v.stockQuantity > 0;
-  const available = variantAvailable
-    ? Math.max(0, v.stockQuantity - inCart)
+  const in_cart =
+    data.cart.find((c) => c.variant_id === v.variant_id)?.quantity ?? 0;
+  const variant_available = v.status === "active" && v.stock_quantity > 0;
+  const available = variant_available
+    ? Math.max(0, v.stock_quantity - in_cart)
     : 0;
-  const purchaseQuantity = Math.min(quantity, Math.max(1, available));
+  const purchase_quantity = Math.min(quantity, Math.max(1, available));
   function add(buy = false) {
-    if (addToCart(v.variantId, purchaseQuantity) && buy)
-      router.push("/checkout");
+    if (add_to_cart(v.variant_id, purchase_quantity)) {
+      set_added(true);
+      if (buy) router.push("/checkout");
+    }
   }
   return (
     <div className="container section">
       <Link href="/#catalog" className="back-link">
-        <ArrowLeft size={15} /> Back to products
+        <ArrowLeft size={15} /> กลับไปเลือกสินค้า
       </Link>
       <div className="panel form-section">
         <div className="detail-copy">
           <span className="eyebrow">
             {
-              categories.find((c) => c.categoryId === p.categoryId)
-                ?.categoryName
+              categories.find((c) => c.category_id === p.category_id)
+                ?.category_name
             }
           </span>
           <h1>{p.name}</h1>
           <p className="muted">
-            By{" "}
-            {merchants.find((m) => m.merchantId === p.merchantId)?.merchantName}
+            ร้านค้า: {" "}
+            {merchants.find((m) => m.merchant_id === p.merchant_id)?.merchant_name}
           </p>
           <div className="my-4">
             <RatingStars rating={rating} count={reviews.length} />
-            <span className="muted text-sm ml-2">customer reviews</span>
+            <span className="muted text-sm ml-2">รีวิวจากผู้ซื้อ</span>
           </div>
           <div className="detail-price">{money(v.price)}</div>
           <p className="description">{p.description}</p>
           <p
-            className={"stock my-4 " + (!inStock ? "unavailable" : "")}
-            aria-label="Product availability"
+            className={"stock my-4 " + (!in_stock ? "unavailable" : inventory.low_stock ? "low-stock" : "")}
+            aria-label="product availability"
           >
-            {inStock ? "In Stock" : "Out of Stock"}
+            {!in_stock ? "สินค้าหมด" : inventory.low_stock ? `สินค้าใกล้หมด · เหลือรวม ${inventory.sellable_stock} ชิ้น` : "พร้อมขาย"}
           </p>
           <label className="field">
-            Select a variant
+            เลือกแบบสินค้า
             <select
-              value={v.variantId}
+              value={v.variant_id}
               onChange={(e) => {
-                setSelected(e.target.value);
-                setQuantity(1);
+                set_selected(e.target.value);
+                set_quantity(1);
               }}
             >
               {variants.map((v) => (
-                <option key={v.variantId} value={v.variantId}>
-                  {v.variantName} —{" "}
-                  {v.status === "active" && v.stockQuantity > 0
-                    ? `${v.stockQuantity} available`
-                    : "Out of Stock"}
+                <option key={v.variant_id} value={v.variant_id}>
+                  {v.variant_name} —{" "}
+                  {v.status === "active" && v.stock_quantity > 0
+                    ? `${v.stock_quantity} ชิ้น${v.stock_quantity <= 10 ? " · ใกล้หมด" : "พร้อมขาย"}`
+                    : "สินค้าหมด"}
                 </option>
               ))}
             </select>
@@ -104,41 +107,42 @@ export default function ProductDetail({ id }: { id: string }) {
           </div>
           <p
             aria-label="Variant availability"
-            className={"stock my-4 " + (!variantAvailable ? "unavailable" : "")}
+            className={"stock my-4 " + (!variant_available ? "unavailable" : v.stock_quantity <= 10 ? "low-stock" : "")}
           >
-            {variantAvailable ? v.stockQuantity + " available" : "Out of Stock"}
-            {inCart > 0 ? " · " + inCart + " in your cart" : ""}
+            {!variant_available ? "สินค้าหมด" : v.stock_quantity <= 10 ? `แบบนี้ใกล้หมด · เหลือ ${v.stock_quantity} ชิ้น` : v.stock_quantity + " ชิ้นพร้อมขาย"}
+            {in_cart > 0 ? " · " + in_cart + " ชิ้นในตะกร้า" : ""}
           </p>
           <div className="row gap-4 mb-5">
-            <span className="text-sm">Quantity</span>
+            <span className="text-sm">เลือกจำนวน</span>
             <QuantitySelector
-              value={purchaseQuantity}
+              value={purchase_quantity}
               max={available}
-              onChange={setQuantity}
+              on_change={set_quantity}
             />
           </div>
           <div className="actions">
             <button
               className="button grow"
-              disabled={available < purchaseQuantity}
+              disabled={available < purchase_quantity}
               onClick={() => add()}
             >
-              <ShoppingBag size={17} /> Add to cart
+              <ShoppingBag size={17} /> เพิ่มลงตะกร้า
             </button>
             <button
               className="button secondary grow"
-              disabled={available < purchaseQuantity}
+              disabled={available < purchase_quantity}
               onClick={() => add(true)}
             >
-              Buy now
+              ไปยืนยันคำสั่งซื้อ
             </button>
           </div>
+          {added && <p role="status" className="ux-notice">เพิ่มสินค้าลงตะกร้าแล้ว · <Link href="/cart" className="text-link">ดูตะกร้าและตรวจยอดรวม →</Link></p>}
           <div className="detail-promises">
             <span>
-              <Truck size={17} /> Free shipping over ฿3,000
+              <Truck size={17} /> ค่าส่ง 60 บาท / ส่งฟรีเมื่อครบ 3,000 บาท
             </span>
             <span>
-              <ShieldCheck size={17} /> Carefully selected quality
+              <ShieldCheck size={17} /> ซื้อจากหลายร้านจะแยกพัสดุจัดส่ง
             </span>
           </div>
         </div>
@@ -146,20 +150,20 @@ export default function ProductDetail({ id }: { id: string }) {
       <section className="reviews-section">
         <div className="row between">
           <h2>
-            Customer reviews{" "}
+            รีวิวจากผู้ซื้อ{" "}
             <span className="muted text-lg">({reviews.length})</span>
           </h2>
           <RatingStars rating={rating} />
         </div>
         {reviews.length ? (
           reviews.map((r) => (
-            <article className="review" key={r.reviewId}>
+            <article className="review" key={r.review_id}>
               <div className="row between">
                 <b>
-                  {customers.find((c) => c.customerId === r.customerId)
-                    ?.fullName ?? "Customer"}
+                  {customers.find((c) => c.customer_id === r.customer_id)
+                    ?.full_name ?? "customer"}
                 </b>
-                <span className="muted text-sm">{date(r.createdAt)}</span>
+                <span className="muted text-sm">{date(r.created_at)}</span>
               </div>
               <RatingStars rating={r.rating} />
               <p>{r.comment}</p>
@@ -167,11 +171,12 @@ export default function ProductDetail({ id }: { id: string }) {
           ))
         ) : (
           <EmptyState
-            title="A fresh find"
-            description="No reviews yet. Complete a purchase to share your thoughts."
+            title="ยังไม่มีรีวิว"
+            description="รีวิวสินค้าได้จากหน้าคำสั่งซื้อ เมื่อได้รับสินค้าครบแล้ว"
           />
         )}
       </section>
     </div>
   );
 }
+
